@@ -145,7 +145,13 @@ class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Ticket.objects.filter(organisation=user.account)
+        if user.is_organizer:
+            queryset = Ticket.objects.filter(organisation=user.account)
+        elif user.role == 'developer':
+            queryset = Ticket.objects.filter(organisation=user.member.organisation)
+            queryset = queryset.filter(assigned_to__user=user)
+        else:
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
         return queryset
 
     def get_success_url(self):
