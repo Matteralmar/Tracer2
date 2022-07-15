@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load tailwind_filters %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <a class="hover:text-blue-500" href="{% url 'administration:member-list' %}">Go back to members</a>
+        <hr/>
+       <div class="py-5 border-5 border-gray-200">
+            <h1 class="text-4xl test-gray-800">Create a new member</h1>
+        </div>
+        <form method="post">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">Submit</button>
+        </form>
+    </div>
+{% endblock content %}

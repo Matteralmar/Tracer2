@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="text-gray-600 body-font overflow-hidden">
+  <div class="container  mx-auto mb-6">
+    <div class="lg:w-4/5 mx-auto flex flex-wrap">
+      <div class="lg:w-1/2 w-full lg:pr-10 lg:py-6 mb-6 lg:mb-0 max-w-lg mx-auto">
+        <h2 class="text-sm title-font text-gray-500 tracking-widest">TICKET</h2>
+        <h1 class="text-gray-900 text-3xl title-font font-medium mb-4">{{ ticket.title }}</h1>
+        <div class="flex mb-4">
+          <a href="{% url 'tickets:ticket-detail' ticket.pk %}" class="flex-grow text-indigo-500 border-b-2 border-indigo-500 py-2 text-lg px-1">
+              Overview
+          </a>
+          <a href="{% url 'tickets:ticket-status-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
+              Category
+          </a>
+          <a href="{% url 'tickets:ticket-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
+              Update Details
+          </a>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Title</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.title }}</span>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Assigned to</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.assigned_to }}</span>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Author</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.author }}</span>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Deadline</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.due_to|timeuntil }}</span>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Date created</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.created_date }}</span>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Description:</b></span>
+        </div>
+        <div class="flex">
+          <p class="leading-relaxed text-base text-gray-500">{{ ticket.description }}</p>
+        </div>
+          <div class="flex border-t border-gray-300 py-2">
+              <a href="{% url 'tickets:ticket-comment-create' ticket.pk %}" class="text-white bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded-md">Add a comment</a>
+          </div>
+      </div>
+    </div>
+    {% for comment in ticket.comments.all %}
+            <div class="mt-5 shadow px-4 sm:px-6">
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                    <dt class="text-sm font-medium text-gray-500">
+                    Note (<a href="{% url 'tickets:ticket-comment-update' comment.pk %}" class="text-blue-500 hover:text-blue-700">update</a>)
+                    </dt>
+                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                    {{ comment.notes }}
+                    </dd>
+                </div>
+                {% if comment.file %}
+                    <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
+                        <dt class="text-sm font-medium text-gray-500">
+                        Attachment
+                        </dt>
+                        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                        <ul class="border border-gray-200 rounded-md divide-y divide-gray-200">
+                            <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                                <div class="w-0 flex-1 flex items-center">
+                                    <!-- Heroicon name: paper-clip -->
+                                    <svg class="flex-shrink-0 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="ml-2 flex-1 w-0 truncate">
+                                    {{ comment.file.name }}
+                                    </span>
+                                </div>
+                                <div class="ml-4 flex-shrink-0">
+                                    <a href="{{ comment.file.url }}" download class="font-medium text-indigo-600 hover:text-indigo-500">
+                                    Download
+                                    </a>
+                                </div>
+                            </li>
+                        </ul>
+                        </dd>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+  </div>
+</section>
+{% endblock content %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+
+{% block scripts %}
+    <script>
+    $(document).ready(function(){
+    $("#filter").keyup(function(){
+
+        // Retrieve the input field text and reset the count to zero
+        var filter = $(this).val();
+
+        // Loop through the comment list
+        $("tbody tr").each(function(){
+
+            // If the list item does not contain the text phrase fade it out
+            if ($(this).text().search(new RegExp(filter, "i")) < 0) {
+                $(this).fadeOut();
+
+            // Show the list item if the phrase matches and increase the count by 1
+            } else {
+                $(this).show();
+            }
+        });
+
+    });
+});
+    </script>
+{% endblock scripts %}
+
+{% block content %}
+<section class="text-gray-600 body-font">
+  <div class="container px-5 py-24 mx-auto flex flex-wrap">
+      <div class="w-full flex justify-between items-center border-b border-gray-200">
+          <div>
+              <h1 class="text-4xl text-gray-800">Archive</h1>
+          </div>
+      </div>
+      <div class="flex w-full md:justify-start justify-center items-end">
+        <div class="relative mr-4 md:w-full lg:w-full xl:w-1/4 w-2/4">
+          <label for="filter" class="leading-7 text-sm text-gray-600">Filter</label>
+          <input type="text" id="filter" name="filter" class="w-full bg-gray-100 rounded border bg-opacity-50 border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none text-gray-700 px-3 leading-8 transition-colors duration-200 ease-in-out">
+        </div>
+      </div>
+      <div class="flex flex-col w-full">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Title
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Organisation
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Start Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            End Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Project Manager
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Progress
+                            </th>
+                            <th scope="col" class="relative px-6 py-3">
+                            <span class="sr-only">Edit</span>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in projects %}
+                            <tr class="bg-white">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <a class="text-blue-500 hover:text-blue-800" href="{% url 'archive:archive-project-detail' project.pk %}">{{ project.title }}</a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ project.organisation }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ project.start_date }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ project.end_date }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ project.project_manager }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                                            Archived
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="{% url 'archive:archive-project-unarchive' project.pk %}" class="text-indigo-600 hover:text-indigo-900">
+                                        Undo
+                                    </a>
+                                </td>
+                            </tr>
+                        {% empty %}
+
+                        <p>There are currently no projects</p>
+
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock content %}
