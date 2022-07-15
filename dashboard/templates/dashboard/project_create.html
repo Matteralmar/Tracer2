@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load tailwind_filters %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <a class="hover:text-blue-500" href="{% url 'dashboard:dashboard-chart' %}">Go back to projects</a>
+    <hr/>
+    <div class="py-5 border-5 border-gray-200">
+        <h1 class="text-4xl test-gray-800">Create a new project</h1>
+    </div>
+    <form method="post" class="mt-5">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="#563d7c" title="Choose your color">
+        <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
+            Submit
+        </button>
+    </form>
+</div>
+{% endblock content %}

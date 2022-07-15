@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="text-gray-600 body-font">
+  <div class="container px-5 py-24 mx-auto">
+    <div class="flex flex-col text-center w-full mb-20">
+      <h1 class="sm:text-4xl text-3xl font-medium title-font mb-2 text-gray-900">Statuses</h1>
+      <p class="lg:w-2/3 mx-auto leading-relaxed text-base">
+          These statuses segment the tickets
+      </p>
+      <a href="{% url 'tickets:status-create' %}" class="hover:text-blue-500">Create status</a>
+    </div>
+    <div class="lg:w-2/3 w-full mx-auto overflow-auto">
+      <table class="table-auto w-full text-left whitespace-no-wrap">
+        <thead>
+          <tr>
+            <th class="px-4 py-3 title-font tracking-wider font-medium text-gray-900 text-sm bg-gray-100 rounded-tl rounded-bl">Name</th>
+            <th class="px-4 py-3 title-font tracking-wider font-medium text-gray-900 text-sm bg-gray-100">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td class="px-4 py-3">Unassigned</td>
+            <td class="px-4 py-3">{{ unassigned_ticket_count }}</td>
+          </tr>
+        {% for status in status_list %}
+          <tr>
+            <td class="px-4 py-3">
+              <a href="{% url 'tickets:status-detail' status.pk %}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-[{{ status.color_code }}] text-stone-50">{{ status.name }}</a>
+            </td>
+          {% if status.id in status_ids %}
+            {% for status_count in status_counts %}
+              {% if status.id == status_count.status_id %}
+                    <td class="px-4 py-3">{{ status_count.total }}</td>
+              {% endif %}
+            {% endfor %}
+              {% else %}
+              {% with count="0" %}
+                  <td class="px-4 py-3">{{ count }}</td>
+              {% endwith %}
+          {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endblock content %}

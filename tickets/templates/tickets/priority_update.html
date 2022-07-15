@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load tailwind_filters %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <a class="hover:text-blue-500" href="{% url 'tickets:priority-list' %}">Go back to priorities</a>
+    <hr/>
+    <div class="py-5 border-5 border-gray-200">
+        <h1 class="text-4xl test-gray-800">Update {{ object.name }}</h1>
+    </div>
+    <form method="post" class="mt-5">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="{{ color_code }}" title="Choose your color">
+        <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">
+            Submit
+        </button>
+    </form>
+    <div class="mt-5 py-5 border-t border-gray-200">
+          <a href="{% url 'tickets:priority-delete' priority.pk %}" class="w-1/2 mt-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
+              Delete
+          </a>
+    </div>
+</div>
+{% endblock content %}
