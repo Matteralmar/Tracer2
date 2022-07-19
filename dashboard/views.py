@@ -206,11 +206,12 @@ class ProjectManagementView(ManagerArchiveCheckAndLoginRequiredMixin, generic.Li
 
         if len(status_color) != 0:
             context["status_color_code"] = status_color[0]
-        if len(status_color) != 0:
+        if len(priority_color) != 0:
             context["priority_color_code"] = priority_color[0]
-        if len(status_color) != 0:
+        if len(type_color) != 0:
             context["type_color_code"] = type_color[0]
         return context
+
 
 class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateView):
     template_name = "dashboard/management_ticket_create.html"
@@ -282,6 +283,76 @@ class ManagementTicketDetailView(ManagerAndLoginRequiredMixin, generic.DetailVie
         project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project)
         return queryset
+
+
+class ProjectTestView(TesterArchiveCheckAndLoginRequiredMixin, generic.ListView):
+    template_name = "dashboard/project_test.html"
+    context_object_name = "tickets"
+
+    def get_queryset(self):
+        user = self.request.user
+        id = self.request.path.split('/')[4]
+        self.request.session['project_id'] = id
+        status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
+        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation, id=id).values_list('id', flat=True)
+        queryset = Ticket.objects.filter(project__in=project, status_id__in=status_id)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        user = self.request.user
+        context = super(ProjectTestView, self).get_context_data(**kwargs)
+        id = self.request.path.split('/')[4]
+        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation, id=id).values_list('id', flat=True)
+        self.request.session['project_id'] = id
+
+        status_id = Ticket.objects.filter(project__in=project).values_list('status_id', flat=True)
+        priority_id = Ticket.objects.filter(project__in=project).values_list('priority_id', flat=True)
+        type_id = Ticket.objects.filter(project__in=project).values_list('type_id', flat=True)
+
+        status_color = Status.objects.filter(pk__in=status_id).values_list('color_code', flat=True)
+        priority_color = Priority.objects.filter(pk__in=priority_id).values_list('color_code', flat=True)
+        type_color = Type.objects.filter(pk__in=type_id).values_list('color_code', flat=True)
+
+        if len(status_color) != 0:
+            context["status_color_code"] = status_color[0]
+        if len(priority_color) != 0:
+            context["priority_color_code"] = priority_color[0]
+        if len(type_color) != 0:
+            context["type_color_code"] = type_color[0]
+        return context
+
+class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
+    template_name = "dashboard/test_ticket_update.html"
+    form_class = TicketModelForm
+
+    def get_form_kwargs(self, **kwargs):
+        kwargs = super(TestTicketUpdateView, self).get_form_kwargs(**kwargs)
+        kwargs.update({
+            "request":self.request
+        })
+        return kwargs
+
+    def get_queryset(self):
+        user = self.request.user
+        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
+        queryset = Ticket.objects.filter(project__in=project)
+        return queryset
+
+    def get_success_url(self):
+        id = self.request.session['project_id']
+        return reverse("dashboard:project-test", args=[id])
+
+
+class TestTicketDetailView(TesterAndLoginRequiredMixin, generic.DetailView):
+    template_name = "dashboard/test_ticket_detail.html"
+    context_object_name = "ticket"
+
+    def get_queryset(self):
+        user = self.request.user
+        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
+        queryset = Ticket.objects.filter(project__in=project)
+        return queryset
+
 
 def project_tickets_csv(request, pk):
     user = request.user
