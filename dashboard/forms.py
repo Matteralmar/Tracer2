@@ -42,3 +42,27 @@ class ManagementTicketModelForm(forms.ModelForm):
         members = Member.objects.filter(user_id__in=agents_id, organisation=user.member.organisation)
         super(ManagementTicketModelForm, self).__init__(*args, **kwargs)
         self.fields['assigned_to'].queryset = members
+
+
+class TicketModelForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = (
+            'title',
+            'assigned_to',
+            'due_to',
+            'description',
+            'status',
+        )
+
+    def __init__(self, *args, **kwargs):
+        request = kwargs.pop("request")
+        user = request.user
+        agents_id = User.objects.filter(role='developer').values_list('id')
+        members = Member.objects.filter(user_id__in=agents_id, organisation=user.member.organisation)
+        statuses = Status.objects.filter(organisation=user.member.organisation)
+        super(TicketModelForm, self).__init__(*args, **kwargs)
+        self.fields['assigned_to'].queryset = members
+        self.fields["status"].queryset = statuses
+
+

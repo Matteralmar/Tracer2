@@ -597,13 +597,10 @@ class CommentUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
 
     def get_queryset(self):
         user = self.request.user
-        # initial queryset of leads for the entire organisation
         if user.is_organizer:
             queryset = Comment.objects.filter(ticket__organisation=user.account)
         else:
-            queryset = Comment.objects.filter(lead__organisation=user.member.organisation)
-            # filter for the agent that is logged in
-            queryset = queryset.filter(ticket__member__user=user)
+            queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
         return queryset
 
     def get_success_url(self):
@@ -618,12 +615,10 @@ class CommentDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
-        # initial queryset of leads for the entire organisation
         if user.is_organizer:
             queryset = Comment.objects.filter(ticket__organisation=user.account)
         else:
             queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
-            # filter for the agent that is logged in
             queryset = queryset.filter(ticket__member__user=user)
         return queryset
 

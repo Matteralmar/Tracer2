@@ -82,6 +82,7 @@ class StatusModelForm(forms.ModelForm):
         model = Status
         fields = (
             'name',
+            'test_status',
         )
 
 class PriorityModelForm(forms.ModelForm):

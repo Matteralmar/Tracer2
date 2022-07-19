@@ -152,7 +152,7 @@ $(document).ready(function(){
       </div>
       <div class="flex w-full md:justify-start justify-center items-end">
         <div class="relative mr-4 md:w-full lg:w-full xl:w-1/4 w-2/4">
-          <label for="hero-field" class="leading-7 text-sm text-gray-600">Filter</label>
+          <label for="filter" class="leading-7 text-sm text-gray-600">Filter</label>
           <input type="text" id="filter" name="filter" class="w-full bg-gray-100 rounded border bg-opacity-50 border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none text-gray-700 px-3 leading-8 transition-colors duration-200 ease-in-out">
         </div>
       </div>
@@ -219,7 +219,11 @@ $(document).ready(function(){
                                     <a href="{% url 'dashboard:project-update' project.pk %}" class="text-indigo-600 hover:text-indigo-900">
                                         Edit
                                     </a>
-                                    {% else %}
+                                    {% elif request.user.role == 'tester' %}
+                                    <a href="{% url 'dashboard:project-test' project.pk %}" class="text-indigo-600 hover:text-indigo-900">
+                                        Test
+                                    </a>
+                                        {% else %}
                                     {% endif %}
                                 </td>
                             </tr>
@@ -237,7 +241,7 @@ $(document).ready(function(){
         </div>
     </div>
 </section>
-<div class="container flex flex-wrap p-5 flex-col md:flex-row items-center bg-contain ">
+<div class=" container flex flex-wrap p-5 flex-col md:flex-row items-center bg-contain">
     <div class="position-relative">
         <canvas id="statusChart" width="400" height="400"></canvas>
     </div>

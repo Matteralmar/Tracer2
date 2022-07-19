@@ -37,7 +37,7 @@ class Project(models.Model):
         ('in_progress', 'In Progress'),
         ('closed', 'Closed'),
     ]
-    title = models.CharField(max_length=32, blank=False, null=False)
+    title = models.CharField(max_length=32, blank=False, null=False, unique=True)
     description = models.TextField(max_length=1000, blank=True, null=True)
     start_date = models.DateField(default=timezone.now)
     end_date = models.DateField(blank=True, null=True)
@@ -55,6 +55,7 @@ class Status(models.Model):
     name = models.CharField(max_length=30)
     organisation = models.ForeignKey(Account, on_delete=models.CASCADE)
     color_code = models.CharField(max_length=100, default='#563d7c')
+    test_status = models.BooleanField(default=False)
 
     def __str__(self):
         if self.name:

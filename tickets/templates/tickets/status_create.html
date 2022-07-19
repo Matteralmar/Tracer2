@@ -12,7 +12,7 @@
         {% csrf_token %}
         {{ form|crispy }}
         <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="#563d7c" title="Choose your color">
-        <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
+        <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">
             Submit
         </button>
     </form>
