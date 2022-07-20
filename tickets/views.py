@@ -619,7 +619,6 @@ class CommentDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
             queryset = Comment.objects.filter(ticket__organisation=user.account)
         else:
             queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
-            queryset = queryset.filter(ticket__member__user=user)
         return queryset
 
 class TicketJsonView(OrganizerAndLoginRequiredMixin,generic.View):
