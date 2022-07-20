@@ -279,6 +279,53 @@ class ManagementTicketDetailView(ManagerAndLoginRequiredMixin, generic.DetailVie
         queryset = Ticket.objects.filter(project__in=project)
         return queryset
 
+class ManagementCommentCreateView(ManagerAndLoginRequiredMixin, generic.CreateView):
+    template_name = "dashboard/management_comment_create.html"
+    form_class = CommentModelForm
+
+    def get_success_url(self):
+        return reverse("dashboard:management-ticket-detail", kwargs={"pk": self.kwargs["pk"]})
+
+    def get_context_data(self, **kwargs):
+        context = super(ManagementCommentCreateView, self).get_context_data(**kwargs)
+        context.update({
+            "ticket": Ticket.objects.get(pk=self.kwargs["pk"])
+        })
+        return context
+
+    def form_valid(self, form):
+        user = self.request.user
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        comment = form.save(commit=False)
+        comment.ticket = ticket
+        comment.author = user
+        comment.save()
+        return super(ManagementCommentCreateView, self).form_valid(form)
+
+class ManagementCommentUpdateView(ManagerCommentAndLoginRequiredMixin, generic.UpdateView):
+    template_name = "dashboard/management_comment_update.html"
+    form_class = CommentModelForm
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
+        return queryset
+
+    def get_success_url(self):
+        return reverse("dashboard:management-ticket-detail",  kwargs={"pk": self.get_object().ticket.id})
+
+class ManagementCommentDeleteView(ManagerCommentAndLoginRequiredMixin, generic.DeleteView):
+    template_name = "dashboard/management_comment_delete.html"
+
+    def get_success_url(self):
+        comment = Comment.objects.get(id=self.kwargs["pk"])
+        return reverse("dashboard:management-ticket-detail", kwargs={"pk": comment.ticket.pk})
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
+        return queryset
+
 
 class ProjectTestView(TesterArchiveCheckAndLoginRequiredMixin, generic.ListView):
     template_name = "dashboard/project_test.html"
@@ -363,9 +410,11 @@ class TestCommentCreateView(TesterAndLoginRequiredMixin, generic.CreateView):
         return context
 
     def form_valid(self, form):
+        user = self.request.user
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         comment = form.save(commit=False)
         comment.ticket = ticket
+        comment.author = user
         comment.save()
         return super(TestCommentCreateView, self).form_valid(form)
 

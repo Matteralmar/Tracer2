@@ -42,14 +42,16 @@
         <div class="flex">
           <p class="leading-relaxed text-base text-gray-500">{{ ticket.description }}</p>
         </div>
-          <hr class="border-t border-gray-300"/>
+          <div class="flex border-t border-gray-300 py-2">
+              <a href="{% url 'dashboard:management-comment-create' ticket.pk %}" class="text-white bg-blue-500 hover:bg-blue-600 px-3 py-2 rounded-md">Add a comment</a>
+          </div>
       </div>
     </div>
     {% for comment in ticket.comments.all %}
             <div class="mt-5 shadow px-4 sm:px-6">
                 <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="text-sm font-medium text-gray-500">
-                    Note
+                    {{ comment.author }} comment{% if request.user == comment.author %}(<a href="{% url 'dashboard:management-comment-update' comment.pk %}" class="text-blue-500 hover:text-blue-700">update</a>){% endif %}
                     </dt>
                     <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                     {{ comment.notes }}
