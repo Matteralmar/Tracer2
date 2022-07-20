@@ -6,7 +6,7 @@ from tickets.models import *
 from administration.mixins import *
 from .forms import *
 from django.db.models import Count
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import render, reverse, render, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -172,11 +172,14 @@ class ProjectDetailView(LoginRequiredMixin, generic.DetailView):
         return queryset
 
 
-class ProjectManagementView(ManagerArchiveCheckAndLoginRequiredMixin, generic.ListView):
+class ProjectManagementView(LoginRequiredMixin, generic.ListView):
     template_name = "dashboard/project_management.html"
     context_object_name = "tickets"
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         id = self.request.path.split('/')[4]
         self.request.session['project_id'] = id
@@ -208,7 +211,7 @@ class ProjectManagementView(ManagerArchiveCheckAndLoginRequiredMixin, generic.Li
         return context
 
 
-class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateView):
+class ManagementTicketCreateView(LoginRequiredMixin, generic.CreateView):
     template_name = "dashboard/management_ticket_create.html"
     form_class = TicketModelForm
 
@@ -217,6 +220,9 @@ class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateVie
         return reverse("dashboard:project-management", args=[id])
 
     def get_form_kwargs(self, **kwargs):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         kwargs = super(ManagementTicketCreateView, self).get_form_kwargs(**kwargs)
         kwargs.update({
             "request":self.request
@@ -235,7 +241,7 @@ class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateVie
         return super(ManagementTicketCreateView, self).form_valid(form)
 
 
-class ManagementTicketUpdateView(ManagerAndLoginRequiredMixin, generic.UpdateView):
+class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
     template_name = "dashboard/management_ticket_update.html"
     form_class = TicketModelForm
 
@@ -247,6 +253,9 @@ class ManagementTicketUpdateView(ManagerAndLoginRequiredMixin, generic.UpdateVie
         return kwargs
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project)
@@ -256,10 +265,13 @@ class ManagementTicketUpdateView(ManagerAndLoginRequiredMixin, generic.UpdateVie
         id = self.request.session['project_id']
         return reverse("dashboard:project-management", args=[id])
 
-class ManagementTicketDeleteView(ManagerAndLoginRequiredMixin, generic.DeleteView):
+class ManagementTicketDeleteView(LoginRequiredMixin, generic.DeleteView):
     template_name = "dashboard/management_ticket_delete.html"
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project)
@@ -269,17 +281,20 @@ class ManagementTicketDeleteView(ManagerAndLoginRequiredMixin, generic.DeleteVie
         id = self.request.session['project_id']
         return reverse("dashboard:project-management", args=[id])
 
-class ManagementTicketDetailView(ManagerAndLoginRequiredMixin, generic.DetailView):
+class ManagementTicketDetailView(LoginRequiredMixin, generic.DetailView):
     template_name = "dashboard/management_ticket_detail.html"
     context_object_name = "ticket"
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project)
         return queryset
 
-class ManagementCommentCreateView(ManagerAndLoginRequiredMixin, generic.CreateView):
+class ManagementCommentCreateView(LoginRequiredMixin, generic.CreateView):
     template_name = "dashboard/management_comment_create.html"
     form_class = CommentModelForm
 
@@ -287,6 +302,9 @@ class ManagementCommentCreateView(ManagerAndLoginRequiredMixin, generic.CreateVi
         return reverse("dashboard:management-ticket-detail", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         context = super(ManagementCommentCreateView, self).get_context_data(**kwargs)
         context.update({
             "ticket": Ticket.objects.get(pk=self.kwargs["pk"])
@@ -302,11 +320,14 @@ class ManagementCommentCreateView(ManagerAndLoginRequiredMixin, generic.CreateVi
         comment.save()
         return super(ManagementCommentCreateView, self).form_valid(form)
 
-class ManagementCommentUpdateView(ManagerCommentAndLoginRequiredMixin, generic.UpdateView):
+class ManagementCommentUpdateView(LoginRequiredMixin, generic.UpdateView):
     template_name = "dashboard/management_comment_update.html"
     form_class = CommentModelForm
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
         return queryset
@@ -314,7 +335,7 @@ class ManagementCommentUpdateView(ManagerCommentAndLoginRequiredMixin, generic.U
     def get_success_url(self):
         return reverse("dashboard:management-ticket-detail",  kwargs={"pk": self.get_object().ticket.id})
 
-class ManagementCommentDeleteView(ManagerCommentAndLoginRequiredMixin, generic.DeleteView):
+class ManagementCommentDeleteView(LoginRequiredMixin, generic.DeleteView):
     template_name = "dashboard/management_comment_delete.html"
 
     def get_success_url(self):
@@ -322,16 +343,22 @@ class ManagementCommentDeleteView(ManagerCommentAndLoginRequiredMixin, generic.D
         return reverse("dashboard:management-ticket-detail", kwargs={"pk": comment.ticket.pk})
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
         return queryset
 
 
-class ProjectTestView(TesterArchiveCheckAndLoginRequiredMixin, generic.ListView):
+class ProjectTestView(LoginRequiredMixin, generic.ListView):
     template_name = "dashboard/project_test.html"
     context_object_name = "tickets"
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         id = self.request.path.split('/')[4]
         self.request.session['project_id'] = id
@@ -363,7 +390,7 @@ class ProjectTestView(TesterArchiveCheckAndLoginRequiredMixin, generic.ListView)
             context["type_color_code"] = type_color[0]
         return context
 
-class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
+class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
     template_name = "dashboard/test_ticket_update.html"
     form_class = TicketModelForm
 
@@ -375,6 +402,9 @@ class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
         return kwargs
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project)
@@ -385,17 +415,20 @@ class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
         return reverse("dashboard:project-test", args=[id])
 
 
-class TestTicketDetailView(TesterAndLoginRequiredMixin, generic.DetailView):
+class TestTicketDetailView(LoginRequiredMixin, generic.DetailView):
     template_name = "dashboard/test_ticket_detail.html"
     context_object_name = "ticket"
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project)
         return queryset
 
-class TestCommentCreateView(TesterAndLoginRequiredMixin, generic.CreateView):
+class TestCommentCreateView(LoginRequiredMixin, generic.CreateView):
     template_name = "dashboard/test_comment_create.html"
     form_class = CommentModelForm
 
@@ -403,6 +436,9 @@ class TestCommentCreateView(TesterAndLoginRequiredMixin, generic.CreateView):
         return reverse("dashboard:test-ticket-detail", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         context = super(TestCommentCreateView, self).get_context_data(**kwargs)
         context.update({
             "ticket": Ticket.objects.get(pk=self.kwargs["pk"])
@@ -418,11 +454,14 @@ class TestCommentCreateView(TesterAndLoginRequiredMixin, generic.CreateView):
         comment.save()
         return super(TestCommentCreateView, self).form_valid(form)
 
-class TestCommentUpdateView(TesterCommentAndLoginRequiredMixin, generic.UpdateView):
+class TestCommentUpdateView(LoginRequiredMixin, generic.UpdateView):
     template_name = "dashboard/test_comment_update.html"
     form_class = CommentModelForm
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
         return queryset
@@ -430,7 +469,7 @@ class TestCommentUpdateView(TesterCommentAndLoginRequiredMixin, generic.UpdateVi
     def get_success_url(self):
         return reverse("dashboard:test-ticket-detail",  kwargs={"pk": self.get_object().ticket.id})
 
-class TestCommentDeleteView(TesterCommentAndLoginRequiredMixin, generic.DeleteView):
+class TestCommentDeleteView(LoginRequiredMixin, generic.DeleteView):
     template_name = "dashboard/test_comment_delete.html"
 
     def get_success_url(self):
@@ -438,6 +477,9 @@ class TestCommentDeleteView(TesterCommentAndLoginRequiredMixin, generic.DeleteVi
         return reverse("dashboard:test-ticket-detail", kwargs={"pk": comment.ticket.pk})
 
     def get_queryset(self):
+        referer = self.request.META.get('HTTP_REFERER')
+        if not referer:
+            raise Http404
         user = self.request.user
         queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
         return queryset
