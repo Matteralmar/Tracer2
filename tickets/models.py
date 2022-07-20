@@ -92,7 +92,6 @@ class Ticket(models.Model):
     description = models.TextField(max_length=1000, blank=False, null=False)
     author = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
     project = models.ForeignKey('Project', related_name='tickets', on_delete=models.CASCADE)
-    email_disable = models.BooleanField(default=False)
 
     def __str__(self):
         return self.title

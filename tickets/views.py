@@ -33,25 +33,13 @@ class TicketListView(NotManagerAndLoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         user = self.request.user
-        print(self.request.POST.get("filter"))
-        if self.request.POST.get("filter"):
-            inp_value = self.request.GET['results']
-            multiple_inp = Q(Q(title__icontains=inp_value)|Q(project__icontains=inp_value))
-            if user.is_organizer:
-                queryset = Ticket.objects.filter(multiple_inp, organisation=user.account, assigned_to__isnull=False)
-            elif user.role == 'developer':
-                queryset = Ticket.objects.filter(organisation=user.member.organisation, assigned_to__isnull=False)
-                queryset = queryset.filter(multiple_inp, assigned_to__user=user)
-            else:
-                queryset = Ticket.objects.filter(multiple_inp, organisation=user.member.organisation, author=user)
+        if user.is_organizer:
+            queryset = Ticket.objects.filter(organisation=user.account, assigned_to__isnull=False)
+        elif user.role == 'developer':
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, assigned_to__isnull=False)
+            queryset = queryset.filter(assigned_to__user=user)
         else:
-            if user.is_organizer:
-                queryset = Ticket.objects.filter(organisation=user.account, assigned_to__isnull=False)
-            elif user.role == 'developer':
-                queryset = Ticket.objects.filter(organisation=user.member.organisation, assigned_to__isnull=False)
-                queryset = queryset.filter(assigned_to__user=user)
-            else:
-                queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -316,37 +304,6 @@ class TicketCategoryUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateVi
     def get_success_url(self):
         return reverse("tickets:ticket-list")
 
-    def form_valid(self, form):
-        user = self.request.user
-        if user.is_organizer:
-            status = Ticket.objects.filter(organisation=user.account, id=self.kwargs["pk"]).values_list('status', flat=True)[0]
-        else:
-            status = Ticket.objects.filter(organisation=user.member.organisation, id=self.kwargs["pk"]).values_list('status', flat=True)[0]
-        try:
-            status_id = int(self.request.POST['status'])
-        except:
-            status_id = None
-        if user.is_organizer:
-            email_disabled = Ticket.objects.filter(organisation=user.account, id=self.kwargs["pk"]).values_list('email_disable', flat=True)[0]
-            project_id = Ticket.objects.filter(organisation=user.account, id=self.kwargs["pk"]).values_list('project_id', flat=True)
-        else:
-            email_disabled = Ticket.objects.filter(organisation=user.member.organisation, id=self.kwargs["pk"]).values_list('email_disable', flat=True)[0]
-            project_id = Ticket.objects.filter(organisation=user.member.organisation, id=self.kwargs["pk"]).values_list('project_id', flat=True)
-        project_manager_id = Project.objects.filter(pk__in=project_id).values_list('project_manager_id', flat=True)
-        user_id = Member.objects.filter(pk__in=project_manager_id).values_list('user_id', flat=True)
-        user_email = User.objects.filter(pk__in=user_id).values_list('email', flat=True)
-        if len(user_email) == 0:
-            user_email = "ultramacflaw@gmail.com"
-        else:
-            user_email = User.objects.filter(pk__in=user_id).values_list('email', flat=True)
-        if status != status_id and email_disabled != True:
-            send_mail(
-                subject="Check for tickets status change",
-                message="There is a change of status in project you managing. You can go and see it in your project table.",
-                from_email="ultramacflaw@gmail.com",
-                recipient_list=[user_email]
-            )
-        return super(TicketCategoryUpdateView, self).form_valid(form)
 
 
 
