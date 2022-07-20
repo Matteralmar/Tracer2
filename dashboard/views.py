@@ -81,7 +81,7 @@ class DashboardChartView(LoginRequiredMixin, generic.ListView):
             return context
 
 
-class ProjectUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
+class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView):
     template_name = "dashboard/project_update.html"
     form_class = ProjectModelForm
     context_object_name = "project"
@@ -96,7 +96,10 @@ class ProjectUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Project.objects.filter(organisation=user.account)
+        if user.is_organizer:
+            queryset = Project.objects.filter(organisation=user.account)
+        else:
+            queryset = Project.objects.filter(organisation=user.member.organisation)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -112,18 +115,10 @@ class ProjectUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
         return context
 
     def form_valid(self, form):
-        user = self.request.user
         color_data = form.save(commit=False)
         color_code_client = self.request.POST['CI']
         color_data.color_code = color_code_client
-        progress = form.cleaned_data['progress']
-        if user.is_organizer and 'closed' == progress:
-            send_mail(
-                subject="Check for closed projects",
-                message="One of your projects is in status 'Closed'. Now you can see it in your dashboard.",
-                from_email="ultramacflaw@gmail.com",
-                recipient_list=[user.email]
-            )
+        color_data.save()
         return super(ProjectUpdateView, self).form_valid(form)
 
     def get_success_url(self):
@@ -215,7 +210,7 @@ class ProjectManagementView(ManagerArchiveCheckAndLoginRequiredMixin, generic.Li
 
 class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateView):
     template_name = "dashboard/management_ticket_create.html"
-    form_class = ManagementTicketModelForm
+    form_class = TicketModelForm
 
     def get_success_url(self):
         id = self.request.session['project_id']
@@ -242,7 +237,7 @@ class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateVie
 
 class ManagementTicketUpdateView(ManagerAndLoginRequiredMixin, generic.UpdateView):
     template_name = "dashboard/management_ticket_update.html"
-    form_class = ManagementTicketModelForm
+    form_class = TicketModelForm
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(ManagementTicketUpdateView, self).get_form_kwargs(**kwargs)
@@ -374,6 +369,29 @@ class TestCommentCreateView(TesterAndLoginRequiredMixin, generic.CreateView):
         comment.save()
         return super(TestCommentCreateView, self).form_valid(form)
 
+class TestCommentUpdateView(TesterCommentAndLoginRequiredMixin, generic.UpdateView):
+    template_name = "dashboard/test_comment_update.html"
+    form_class = CommentModelForm
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
+        return queryset
+
+    def get_success_url(self):
+        return reverse("dashboard:test-ticket-detail",  kwargs={"pk": self.get_object().ticket.id})
+
+class TestCommentDeleteView(TesterCommentAndLoginRequiredMixin, generic.DeleteView):
+    template_name = "dashboard/test_comment_delete.html"
+
+    def get_success_url(self):
+        comment = Comment.objects.get(id=self.kwargs["pk"])
+        return reverse("dashboard:test-ticket-detail", kwargs={"pk": comment.ticket.pk})
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Comment.objects.filter(ticket__organisation=user.member.organisation)
+        return queryset
 
 def project_tickets_csv(request, pk):
     user = request.user
