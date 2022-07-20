@@ -21,10 +21,9 @@ class ManagerAndLoginRequiredMixin(AccessMixin):
             id = self.request.session['project_id']
             project = Project.objects.get(id=id)
             project_id = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
-            id = int(id)
         except:
             return redirect("dashboard:dashboard-chart")
-        if not request.user.is_authenticated or not request.user.role == 'project_manager'or project.archive or not id in project_id:
+        if not request.user.is_authenticated or not request.user.role == 'project_manager'or project.archive or not int(id) in project_id:
             return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
@@ -35,10 +34,9 @@ class ManagerArchiveCheckAndLoginRequiredMixin(AccessMixin):
             id = self.request.path.split('/')[4]
             project = Project.objects.get(id=id)
             project_id = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
-            id = int(id)
         except:
             return redirect("dashboard:dashboard-chart")
-        if not request.user.is_authenticated or not request.user.role == 'project_manager' or project.archive or not id in project_id:
+        if not request.user.is_authenticated or not request.user.role == 'project_manager' or project.archive or not int(id) in project_id:
             return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
@@ -49,10 +47,9 @@ class TesterArchiveCheckAndLoginRequiredMixin(AccessMixin):
             id = self.request.path.split('/')[4]
             project = Project.objects.get(id=id)
             project_id = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
-            id = int(id)
         except:
             return redirect("dashboard:dashboard-chart")
-        if not request.user.is_authenticated or not request.user.role == 'tester' or project.archive or not id in project_id:
+        if not request.user.is_authenticated or not request.user.role == 'tester' or project.archive or not int(id) in project_id:
             return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
