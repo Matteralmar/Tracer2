@@ -101,6 +101,7 @@ def handle_upload_comments(instance, filename):
 
 class Comment(models.Model):
     ticket = models.ForeignKey(Ticket, related_name="comments", on_delete=models.CASCADE)
+    author = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
     date_added = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)
     file = models.FileField(null=True, blank=True, upload_to=handle_upload_comments)

@@ -537,18 +537,20 @@ class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
     def get_context_data(self, **kwargs):
         context = super(CommentCreateView, self).get_context_data(**kwargs)
         context.update({
-            "ticket": Ticket.objects.get(pk=self.kwargs["pk"])
+            "ticket": Ticket.objects.get(pk=self.kwargs["pk"]),
         })
         return context
 
     def form_valid(self, form):
+        user = self.request.user
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         comment = form.save(commit=False)
         comment.ticket = ticket
+        comment.author = user
         comment.save()
         return super(CommentCreateView, self).form_valid(form)
 
-class CommentUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
+class CommentUpdateView(CommentAndLoginRequiredMixin, generic.UpdateView):
     template_name = "tickets/comment_update.html"
     form_class = CommentModelForm
 
@@ -563,7 +565,7 @@ class CommentUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
     def get_success_url(self):
         return reverse("tickets:ticket-detail",  kwargs={"pk": self.get_object().ticket.id})
 
-class CommentDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
+class CommentDeleteView(CommentAndLoginRequiredMixin, generic.DeleteView):
     template_name = "tickets/comment_delete.html"
 
     def get_success_url(self):
