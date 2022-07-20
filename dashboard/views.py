@@ -353,6 +353,27 @@ class TestTicketDetailView(TesterAndLoginRequiredMixin, generic.DetailView):
         queryset = Ticket.objects.filter(project__in=project)
         return queryset
 
+class TestCommentCreateView(TesterAndLoginRequiredMixin, generic.CreateView):
+    template_name = "dashboard/test_comment_create.html"
+    form_class = CommentModelForm
+
+    def get_success_url(self):
+        return reverse("dashboard:test-ticket-detail", kwargs={"pk": self.kwargs["pk"]})
+
+    def get_context_data(self, **kwargs):
+        context = super(TestCommentCreateView, self).get_context_data(**kwargs)
+        context.update({
+            "ticket": Ticket.objects.get(pk=self.kwargs["pk"])
+        })
+        return context
+
+    def form_valid(self, form):
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        comment = form.save(commit=False)
+        comment.ticket = ticket
+        comment.save()
+        return super(TestCommentCreateView, self).form_valid(form)
+
 
 def project_tickets_csv(request, pk):
     user = request.user

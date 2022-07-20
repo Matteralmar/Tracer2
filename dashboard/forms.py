@@ -65,4 +65,11 @@ class TicketModelForm(forms.ModelForm):
         self.fields['assigned_to'].queryset = members
         self.fields["status"].queryset = statuses
 
+class CommentModelForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = (
+            'notes',
+            'file',
+        )
 
