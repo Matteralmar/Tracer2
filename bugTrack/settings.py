@@ -157,7 +157,7 @@ AUTH_USER_MODEL = 'tickets.User'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-LOGIN_REDIRECT_URL = "/tickets"
+LOGIN_REDIRECT_URL = "/dashboard"
 LOGIN_URL = "/login"
 LOGOUT_REDIRECT_URL = "/login"
 

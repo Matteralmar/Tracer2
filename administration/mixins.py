@@ -5,7 +5,7 @@ from tickets.models import *
 class ManagerOrganizerAndLoginRequiredMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or not (request.user.is_organizer or request.user.role == 'project_manager'):
-            return redirect("tickets:ticket-list")
+            return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
 class OrganizerAndLoginRequiredMixin(AccessMixin):
@@ -88,5 +88,5 @@ class TesterCommentAndLoginRequiredMixin(AccessMixin):
 class NotManagerAndLoginRequiredMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or request.user.role == 'project_manager':
-            return redirect("dashboard:dashboard-chart")
+            return redirect("tickets:ticket-list")
         return super().dispatch(request, *args, **kwargs)
