@@ -90,8 +90,9 @@ class Ticket(models.Model):
     created_date = models.DateTimeField(default=timezone.now)
     due_to = models.DateTimeField(auto_now_add=False, auto_now=False, blank=True, null=True, default=timezone.now)
     description = models.TextField(max_length=1000, blank=False, null=False)
-    author = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
+    author = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL, related_name='tickets')
     project = models.ForeignKey('Project', related_name='tickets', on_delete=models.CASCADE)
+    tester = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.title

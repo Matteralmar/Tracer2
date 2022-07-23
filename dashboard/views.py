@@ -9,6 +9,8 @@ from django.db.models import Count
 from django.http import HttpResponse, Http404
 from django.shortcuts import render, reverse, render, get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Q
+
 
 
 class DashboardChartView(LoginRequiredMixin, generic.ListView):
@@ -121,7 +123,16 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
         project = Project.objects.get(pk=self.kwargs["pk"])
         if self.request.user.is_organizer:
             project_manager = form.cleaned_data['project_manager']
+            titl = form.cleaned_data['title']
             color_data.save()
+            if project.title != titl:
+                if project.project_manager is not None:
+                    user = User.objects.get(username=project.project_manager)
+                    Notification.objects.create(
+                        title=f'Project name change',
+                        text=f'There was a name change of "{project.title}" into "{titl}" by {self.request.user.username}',
+                        recipient=user
+                    )
             if (project_manager and project.project_manager is not None) and (project_manager == project.project_manager):
                 user = User.objects.get(username=project.project_manager)
                 Notification.objects.create(
@@ -284,7 +295,7 @@ class ProjectManagementView(LoginRequiredMixin, generic.ListView):
 
 class ManagementTicketCreateView(LoginRequiredMixin, generic.CreateView):
     template_name = "dashboard/management_ticket_create.html"
-    form_class = TicketModelForm
+    form_class = ManagementTicketModelForm
 
     def get_success_url(self):
         id = self.request.session['project_id']
@@ -322,7 +333,7 @@ class ManagementTicketCreateView(LoginRequiredMixin, generic.CreateView):
 
 class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
     template_name = "dashboard/management_ticket_update.html"
-    form_class = TicketModelForm
+    form_class = ManagementTicketModelForm
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(ManagementTicketUpdateView, self).get_form_kwargs(**kwargs)
@@ -343,11 +354,20 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
     def form_valid(self, form):
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         assigned_to = form.cleaned_data['assigned_to']
+        titl = form.cleaned_data['title']
+        if ticket.title != titl:
+            if ticket.assigned_to is not None:
+                user = User.objects.get(username=ticket.assigned_to)
+                Notification.objects.create(
+                    title=f'Ticket name change',
+                    text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}',
+                    recipient=user
+                )
         if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Ticket update',
-                text=f'Your "{ticket.title}" ticket details was updated by {self.request.user.username}',
+                text=f'Your "{titl}" ticket details was updated by {self.request.user.username}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -355,13 +375,13 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
                 recipient=user
             )
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -369,7 +389,7 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -377,7 +397,7 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -493,7 +513,7 @@ class ProjectTestView(LoginRequiredMixin, generic.ListView):
         self.request.session['project_id'] = id
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation, id=id).values_list('id', flat=True)
-        queryset = Ticket.objects.filter(project__in=project, status_id__in=status_id)
+        queryset = Ticket.objects.filter(Q(tester__in=[user.id]) | Q(tester__isnull=True,), project__in=project, status_id__in=status_id,)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -542,11 +562,20 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
     def form_valid(self, form):
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         assigned_to = form.cleaned_data['assigned_to']
+        titl = form.cleaned_data['title']
+        if ticket.title != titl:
+            if ticket.assigned_to is not None:
+                user = User.objects.get(username=ticket.assigned_to)
+                Notification.objects.create(
+                    title=f'Ticket name change',
+                    text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}',
+                    recipient=user
+                )
         if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Ticket update',
-                text=f'Your "{ticket.title}" ticket details was updated by {self.request.user.username}',
+                text=f'Your "{titl}" ticket details was updated by {self.request.user.username}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -554,13 +583,13 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
                 recipient=user
             )
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -568,7 +597,7 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -576,7 +605,7 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -679,9 +708,9 @@ def project_tickets_csv(request, pk):
         writer = csv.writer(response)
         project = Project.objects.filter(organisation=user.account, id=pk)
         tickets = Ticket.objects.filter(project__in=project)
-        writer.writerow(['Ticket Title', 'Assigned To', 'Status', 'Priority', 'Type', 'Created Date', 'Due To', 'Author'])
+        writer.writerow(['Ticket Title', 'Assigned To', 'Status', 'Priority', 'Type', 'Created Date', 'Due To', 'Author', 'Tester'])
         for ticket in tickets:
-            writer.writerow([ticket.title, ticket.assigned_to, ticket.status, ticket.priority, ticket.type, ticket.created_date, ticket.due_to, ticket.author])
+            writer.writerow([ticket.title, ticket.assigned_to, ticket.status, ticket.priority, ticket.type, ticket.created_date, ticket.due_to, ticket.author, ticket.tester])
         return response
     return redirect('/dashboard/')
 
