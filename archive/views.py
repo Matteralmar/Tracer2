@@ -25,6 +25,8 @@ class ProjectArchiveDetailView(OrganizerAndLoginRequiredMixin, generic.DetailVie
 
 def undo_archive(request, pk):
     user = request.user
+    if not user.is_authenticated:
+        return redirect('/login/')
     if user.is_organizer:
         project = Project.objects.get(id=pk)
         project.archive = False

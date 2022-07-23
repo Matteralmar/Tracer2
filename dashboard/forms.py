@@ -1,6 +1,6 @@
 from django import forms
 from tickets.models import *
-
+from datetime import datetime
 
 class ProjectModelForm(forms.ModelForm):
     class Meta:
@@ -21,9 +21,10 @@ class ProjectModelForm(forms.ModelForm):
             manager_id = User.objects.filter(role='project_manager').values_list('id')
             members = Member.objects.filter(user_id__in=manager_id, organisation=user.account)
             self.fields['project_manager'].queryset = members
+            self.fields["end_date"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
         else:
             del self.fields['project_manager']
-
+            self.fields["end_date"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
 
 
 
@@ -46,6 +47,7 @@ class TicketModelForm(forms.ModelForm):
         statuses = Status.objects.filter(organisation=user.member.organisation)
         super(TicketModelForm, self).__init__(*args, **kwargs)
         self.fields['assigned_to'].queryset = members
+        self.fields["due_to"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
         self.fields["status"].queryset = statuses
 
 class CommentModelForm(forms.ModelForm):
