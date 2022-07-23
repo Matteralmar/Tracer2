@@ -325,7 +325,7 @@ class ManagementTicketCreateView(LoginRequiredMixin, generic.CreateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'You was assigned a new "{ticket.title}" ticket by {self.request.user.username}',
+                text=f'You was assigned a new "{ticket.title}" ticket by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
         return super(ManagementTicketCreateView, self).form_valid(form)
@@ -360,14 +360,14 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
                 user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Ticket name change',
-                    text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}',
+                    text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}/{self.request.user.get_role_display()}',
                     recipient=user
                 )
         if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Ticket update',
-                text=f'Your "{titl}" ticket details was updated by {self.request.user.username}',
+                text=f'Your "{titl}" ticket details was updated by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -375,13 +375,13 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -389,7 +389,7 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -397,7 +397,7 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -464,7 +464,7 @@ class ManagementCommentCreateView(LoginRequiredMixin, generic.CreateView):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'New comment',
-                text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}',
+                text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
         return super(ManagementCommentCreateView, self).form_valid(form)
@@ -568,14 +568,14 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
                 user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Ticket name change',
-                    text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}',
+                    text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}/{self.request.user.get_role_display()}',
                     recipient=user
                 )
         if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Ticket update',
-                text=f'Your "{titl}" ticket details was updated by {self.request.user.username}',
+                text=f'Your "{titl}" ticket details was updated by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -583,13 +583,13 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -597,7 +597,7 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=assigned_to)
             Notification.objects.create(
                 title=f'New ticket',
-                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
+                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -605,7 +605,7 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -657,7 +657,7 @@ class TestCommentCreateView(LoginRequiredMixin, generic.CreateView):
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'New comment',
-                text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}',
+                text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
         return super(TestCommentCreateView, self).form_valid(form)
