@@ -102,13 +102,46 @@ class TicketCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
             ticket.organisation = user.account
             ticket.author = user
             ticket.save()
-            return super(TicketCreateView, self).form_valid(form)
         else:
             ticket = form.save(commit=False)
             ticket.organisation = user.member.organisation
             ticket.author = user
             ticket.save()
+        if user.role != 'developer':
+            titl = form.cleaned_data['title']
+            assigned_to = form.cleaned_data['assigned_to']
+            project = form.cleaned_data['project']
+            if assigned_to is not None:
+                user = User.objects.get(username=assigned_to)
+                Notification.objects.create(
+                    title=f'New ticket',
+                    text=f'You was assigned a new "{titl}" ticket by {self.request.user.username}',
+                    recipient=user
+                )
+            manager_id = Project.objects.filter(title=project).values_list('project_manager', flat=True)[0]
+            if manager_id is not None:
+                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)[0]
+                user = User.objects.get(id=user_id)
+                Notification.objects.create(
+                    title=f'New ticket',
+                    text=f'{self.request.user.username} created "{titl}" ticket for "{project}" project',
+                    recipient=user
+                )
             return super(TicketCreateView, self).form_valid(form)
+        else:
+            titl = form.cleaned_data['title']
+            project = form.cleaned_data['project']
+            manager_id = Project.objects.filter(title=project).values_list('project_manager', flat=True)[0]
+            if manager_id is not None:
+                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)[0]
+                user = User.objects.get(id=user_id)
+                Notification.objects.create(
+                    title=f'New ticket',
+                    text=f'{self.request.user.username} created "{titl}" ticket for "{project}" project',
+                    recipient=user
+                )
+            return super(TicketCreateView, self).form_valid(form)
+
 
 
 class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
@@ -137,7 +170,96 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
     def get_success_url(self):
         return reverse("tickets:ticket-detail", kwargs={"pk": self.kwargs["pk"]})
 
+    def form_valid(self, form):
+        user = self.request.user
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        if user.role != 'developer':
+            titl = form.cleaned_data['title']
+            assigned_to = form.cleaned_data['assigned_to']
+            project = form.cleaned_data['project']
+            if ticket.title != titl:
+                if ticket.assigned_to is not None:
+                    user = User.objects.get(username=ticket.assigned_to)
+                    Notification.objects.create(
+                        title=f'Ticket name change',
+                        text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}',
+                        recipient=user
+                    )
+                manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
+                if manager_id is not None:
+                    user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
+                    user = User.objects.get(id=user_id[0])
+                    Notification.objects.create(
+                        title=f'Ticket name change',
+                        text=f'There was a name change of "{ticket.title}" into "{titl}" of your "{ticket.project}" project by {self.request.user.username}',
+                        recipient=user
+                    )
+            if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
+                user = User.objects.get(username=ticket.assigned_to)
+                Notification.objects.create(
+                    title=f'Ticket update',
+                    text=f'Your "{titl}" ticket details was updated by {self.request.user.username}',
+                    recipient=user
+                )
+            if (assigned_to and ticket.assigned_to is not None) and (assigned_to != ticket.assigned_to):
+                user = User.objects.get(username=assigned_to)
+                Notification.objects.create(
+                    title=f'New ticket',
+                    text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
+                    recipient=user
+                )
+                user = User.objects.get(username=ticket.assigned_to)
+                Notification.objects.create(
+                    title=f'Unassigned ticket',
+                    text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                    recipient=user
+                )
+            if ticket.assigned_to is None and assigned_to is not None:
+                user = User.objects.get(username=assigned_to)
+                Notification.objects.create(
+                    title=f'New ticket',
+                    text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
+                    recipient=user
+                )
+            if ticket.assigned_to is not None and assigned_to is None:
+                user = User.objects.get(username=ticket.assigned_to)
+                Notification.objects.create(
+                    title=f'Unassigned ticket',
+                    text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                    recipient=user
+                )
 
+            if (project and ticket.project is not None) and (project == ticket.project):
+                manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
+                if manager_id is not None:
+                    user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
+                    user = User.objects.get(id=user_id[0])
+                    Notification.objects.create(
+                        title=f'Ticket update',
+                        text=f'{self.request.user.username} updated "{titl}" ticket for "{project}" project',
+                        recipient=user
+                    )
+            if (project and ticket.project is not None) and (project != ticket.project):
+                manager_id = Project.objects.filter(title=project).values_list('project_manager', flat=True)[0]
+                if manager_id is not None:
+                    user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
+                    user = User.objects.get(id=user_id[0])
+                    Notification.objects.create(
+                        title=f'New ticket',
+                        text=f'"{titl}" ticket was assigned to your "{project}" project by {self.request.user.username}',
+                        recipient=user
+                    )
+                manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
+                if manager_id is not None:
+                    user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
+                    user = User.objects.get(id=user_id[0])
+                    Notification.objects.create(
+                        title=f'Unassigned ticket',
+                        text=f'"{titl}" ticket was unassigned from your "{ticket.project}" project by {self.request.user.username}',
+                        recipient=user
+                    )
+            return super(TicketUpdateView, self).form_valid(form)
+        return super(TicketUpdateView, self).form_valid(form)
 
 
 class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
@@ -153,6 +275,29 @@ class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
         else:
             queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
         return queryset
+
+    def form_valid(self, form):
+        user = self.request.user
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        if user.role != 'developer':
+            if ticket.assigned_to is not None:
+                user = User.objects.get(username=ticket.assigned_to)
+                Notification.objects.create(
+                    title=f'Ticket deleted',
+                    text=f'The ticket "{ticket.title}" you were assigned to was deleted by {self.request.user.username}',
+                    recipient=user
+                )
+            manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
+            if manager_id is not None:
+                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)[0]
+                user = User.objects.get(id=user_id)
+                Notification.objects.create(
+                    title=f'Ticket deleted',
+                    text=f'{self.request.user.username} deleted "{ticket.title}" ticket from "{ticket.project}" project',
+                    recipient=user
+                )
+            return super(TicketDeleteView, self).form_valid(form)
+        return super(TicketDeleteView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse("tickets:ticket-list")
@@ -177,6 +322,12 @@ class AssignMemberView(OrganizerAndLoginRequiredMixin, generic.FormView):
         ticket = Ticket.objects.get(id=self.kwargs["pk"])
         ticket.assigned_to = member
         ticket.save()
+        user = User.objects.get(username=ticket.assigned_to)
+        Notification.objects.create(
+            title=f'New ticket',
+            text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+            recipient=user
+        )
         return super(AssignMemberView, self).form_valid(form)
 
 class StatusListView(OrganizerAndLoginRequiredMixin, generic.ListView):
@@ -312,6 +463,24 @@ class TicketCategoryUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateVi
             queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
 
         return queryset
+
+    def form_valid(self, form):
+        status = form.cleaned_data['status']
+        test_status = Status.objects.filter(name=status).values_list('test_status', flat=True)[0]
+        if test_status:
+            id = self.kwargs["pk"]
+            ticket = Ticket.objects.get(id=id)
+            project_id = Ticket.objects.filter(id=id).values_list('project', flat=True)[0]
+            project = Project.objects.get(id=project_id)
+            users = User.objects.filter(ticket_flow=project, role='tester')
+            if len(users) != 0:
+                for user in users:
+                    Notification.objects.create(
+                        title=f'Test ticket',
+                        text=f'"{ticket.title}" is in your "{project.title}" project and ready for a test',
+                        recipient=user
+                    )
+        return super(TicketCategoryUpdateView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse("tickets:ticket-list")
@@ -560,6 +729,13 @@ class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
         comment.ticket = ticket
         comment.author = user
         comment.save()
+        if ticket.assigned_to is not None:
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'New comment',
+                text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}',
+                recipient=user
+            )
         return super(CommentCreateView, self).form_valid(form)
 
 class CommentUpdateView(CommentAndLoginRequiredMixin, generic.UpdateView):
