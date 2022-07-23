@@ -62,7 +62,13 @@ class MemberCreateView(ManagerOrganizerAndLoginRequiredMixin, generic.CreateView
             text=f'You was invited by {self.request.user} to a team. Hope you will enjoy your work in our app!',
             recipient=user
         )
-
+        if user_s.role == 'project_manager':
+            recipient = User.objects.get(id=user_s.member.organisation.id)
+            Notification.objects.create(
+                title=f'New user',
+                text=f'User {user.username}/{user.get_role_display()} was created by {self.request.user}',
+                recipient=recipient
+            )
         send_mail(
             subject="You are invited to be a member",
             message="You were added as a member of a team. Please login to start working",
