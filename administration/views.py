@@ -56,6 +56,13 @@ class MemberCreateView(ManagerOrganizerAndLoginRequiredMixin, generic.CreateView
                 organisation=self.request.user.member.organisation,
 
             )
+
+        Notification.objects.create(
+            title=f'Welcome to Tracer',
+            text=f'You was invited by {self.request.user} to a team. Hope you will enjoy your work in our app!',
+            recipient=user
+        )
+
         send_mail(
             subject="You are invited to be a member",
             message="You were added as a member of a team. Please login to start working",
@@ -87,6 +94,26 @@ class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView
             "request":self.request
         })
         return kwargs
+
+    def form_valid(self, form):
+        user = User.objects.get(pk=self.kwargs["pk"])
+        ticket_flow = form.cleaned_data['ticket_flow']
+        role = form.cleaned_data['role']
+        if role != user.role:
+            user = User.objects.get(username=user.username)
+            Notification.objects.create(
+                title=f'Role',
+                text=f'Your role was changed to "{role}" by {self.request.user.username}',
+                recipient=user
+            )
+        if user.ticket_flow != ticket_flow:
+            user = User.objects.get(username=user.username)
+            Notification.objects.create(
+                title=f'Ticket flow',
+                text=f'Your ticket flow was altered to "{ticket_flow}" by {self.request.user.username}',
+                recipient=user
+            )
+        return super(MemberUpdateView, self).form_valid(form)
 
     def get_queryset(self):
         user = self.request.user

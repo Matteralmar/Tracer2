@@ -28,6 +28,7 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls', namespace="dashboard")),
     path('archive/', include('archive.urls', namespace="archive")),
     path('account/', include('account.urls', namespace="account")),
+    path('notifications/', include('notifications.urls', namespace="notifications")),
     path('login/', LoginView.as_view(), name='login'),
     path('signup/', SignupView.as_view(), name='signup'),
     path('reset-password/', PasswordResetView.as_view(), name='reset-password'),

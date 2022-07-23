@@ -118,7 +118,58 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
         color_data = form.save(commit=False)
         color_code_client = self.request.POST['CI']
         color_data.color_code = color_code_client
+        project = Project.objects.get(pk=self.kwargs["pk"])
+        if self.request.user.is_organizer:
+            project_manager = form.cleaned_data['project_manager']
+            color_data.save()
+            if (project_manager and project.project_manager is not None) and (project_manager == project.project_manager):
+                user = User.objects.get(username=project.project_manager)
+                Notification.objects.create(
+                    title=f'Project update',
+                    text=f'Your "{project.title}" project was assigned to you by {self.request.user.username}',
+                    recipient=user
+                )
+                return super(ProjectUpdateView, self).form_valid(form)
+            if (project_manager and project.project_manager is not None) and (project_manager != project.project_manager):
+                user = User.objects.get(username=project_manager)
+                Notification.objects.create(
+                    title=f'New project',
+                    text=f'"{project.title}" project was assigned to you by {self.request.user.username}',
+                    recipient=user
+                )
+                user = User.objects.get(username=project.project_manager)
+                Notification.objects.create(
+                    title=f'Unassigned project',
+                    text=f'"{project.title}" project was unassigned from you by {self.request.user.username}',
+                    recipient=user
+                )
+                return super(ProjectUpdateView, self).form_valid(form)
+            if project.project_manager is None and project_manager is not None:
+                user = User.objects.get(username=project_manager)
+                Notification.objects.create(
+                    title=f'New project',
+                    text=f'"{project.title}" project was assigned to you by {self.request.user.username}',
+                    recipient=user
+                )
+                return super(ProjectUpdateView, self).form_valid(form)
+            if project.project_manager is not None and project_manager is None:
+                user = User.objects.get(username=project.project_manager)
+                Notification.objects.create(
+                    title=f'Unassigned project',
+                    text=f'"{project.title}" project was unassigned from you by {self.request.user.username}',
+                    recipient=user
+                )
+                return super(ProjectUpdateView, self).form_valid(form)
+        progress = form.cleaned_data['progress']
         color_data.save()
+        if progress == 'closed':
+            user_id = Member.objects.filter(user=self.request.user).values_list('organisation', flat=True)[0]
+            user = User.objects.get(id=user_id)
+            Notification.objects.create(
+                title=f'Project closed',
+                text=f'"{project.title}" project was closed by {self.request.user.username}',
+                recipient=user
+            )
         return super(ProjectUpdateView, self).form_valid(form)
 
     def get_success_url(self):
@@ -132,6 +183,18 @@ class ProjectDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
         user = self.request.user
         queryset = Project.objects.filter(organisation=user.account)
         return queryset
+
+    def form_valid(self, form):
+        project_id = self.kwargs["pk"]
+        project = Project.objects.get(id=project_id)
+        if project.project_manager is not None:
+            project_manager = User.objects.get(username=project.project_manager)
+            Notification.objects.create(
+                title=f'Project deletion',
+                text=f'Project "{project.title}" that you manage was deleted by {self.request.user.username}',
+                recipient=project_manager
+            )
+        return super(ProjectDeleteView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse("dashboard:dashboard-chart")
@@ -154,6 +217,14 @@ class ProjectCreateView(OrganizerAndLoginRequiredMixin, generic.CreateView):
         color_code_client = self.request.POST['CI']
         project.color_code = color_code_client
         project.save()
+        project_manager = form.cleaned_data['project_manager']
+        if project_manager is not None:
+            project_manager = User.objects.get(username=project_manager)
+            Notification.objects.create(
+                title=f'New project',
+                text=f'You was assigned to a new "{project.title}" project by {self.request.user.username}',
+                recipient=project_manager
+            )
         return super(ProjectCreateView, self).form_valid(form)
 
     def get_success_url(self):
@@ -238,6 +309,14 @@ class ManagementTicketCreateView(LoginRequiredMixin, generic.CreateView):
         ticket.project = project
         ticket.author = user
         ticket.save()
+        assigned_to = form.cleaned_data['assigned_to']
+        if assigned_to is not None:
+            user = User.objects.get(username=assigned_to)
+            Notification.objects.create(
+                title=f'New ticket',
+                text=f'You was assigned a new "{ticket.title}" ticket by {self.request.user.username}',
+                recipient=user
+            )
         return super(ManagementTicketCreateView, self).form_valid(form)
 
 
@@ -260,6 +339,49 @@ class ManagementTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
         project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project)
         return queryset
+
+    def form_valid(self, form):
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        assigned_to = form.cleaned_data['assigned_to']
+        if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'Ticket update',
+                text=f'Your "{ticket.title}" ticket details was updated by {self.request.user.username}',
+                recipient=user
+            )
+            return super(ManagementTicketUpdateView, self).form_valid(form)
+        if (assigned_to and ticket.assigned_to is not None) and (assigned_to != ticket.assigned_to):
+            user = User.objects.get(username=assigned_to)
+            Notification.objects.create(
+                title=f'New ticket',
+                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                recipient=user
+            )
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'Unassigned ticket',
+                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                recipient=user
+            )
+            return super(ManagementTicketUpdateView, self).form_valid(form)
+        if ticket.assigned_to is None and assigned_to is not None:
+            user = User.objects.get(username=assigned_to)
+            Notification.objects.create(
+                title=f'New ticket',
+                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                recipient=user
+            )
+            return super(ManagementTicketUpdateView, self).form_valid(form)
+        if ticket.assigned_to is not None and assigned_to is None:
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'Unassigned ticket',
+                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                recipient=user
+            )
+            return super(ManagementTicketUpdateView, self).form_valid(form)
+        return super(ManagementTicketUpdateView, self).form_valid(form)
 
     def get_success_url(self):
         id = self.request.session['project_id']
@@ -318,6 +440,13 @@ class ManagementCommentCreateView(LoginRequiredMixin, generic.CreateView):
         comment.ticket = ticket
         comment.author = user
         comment.save()
+        if ticket.assigned_to is not None:
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'New comment',
+                text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}',
+                recipient=user
+            )
         return super(ManagementCommentCreateView, self).form_valid(form)
 
 class ManagementCommentUpdateView(LoginRequiredMixin, generic.UpdateView):
@@ -410,6 +539,49 @@ class TestTicketUpdateView(LoginRequiredMixin, generic.UpdateView):
         queryset = Ticket.objects.filter(project__in=project)
         return queryset
 
+    def form_valid(self, form):
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        assigned_to = form.cleaned_data['assigned_to']
+        if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'Ticket update',
+                text=f'Your "{ticket.title}" ticket details was updated by {self.request.user.username}',
+                recipient=user
+            )
+            return super(TestTicketUpdateView, self).form_valid(form)
+        if (assigned_to and ticket.assigned_to is not None) and (assigned_to != ticket.assigned_to):
+            user = User.objects.get(username=assigned_to)
+            Notification.objects.create(
+                title=f'New ticket',
+                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                recipient=user
+            )
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'Unassigned ticket',
+                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                recipient=user
+            )
+            return super(TestTicketUpdateView, self).form_valid(form)
+        if ticket.assigned_to is None and assigned_to is not None:
+            user = User.objects.get(username=assigned_to)
+            Notification.objects.create(
+                title=f'New ticket',
+                text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+                recipient=user
+            )
+            return super(TestTicketUpdateView, self).form_valid(form)
+        if ticket.assigned_to is not None and assigned_to is None:
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'Unassigned ticket',
+                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
+                recipient=user
+            )
+            return super(TestTicketUpdateView, self).form_valid(form)
+        return super(TestTicketUpdateView, self).form_valid(form)
+
     def get_success_url(self):
         id = self.request.session['project_id']
         return reverse("dashboard:project-test", args=[id])
@@ -452,6 +624,13 @@ class TestCommentCreateView(LoginRequiredMixin, generic.CreateView):
         comment.ticket = ticket
         comment.author = user
         comment.save()
+        if ticket.assigned_to is not None:
+            user = User.objects.get(username=ticket.assigned_to)
+            Notification.objects.create(
+                title=f'New comment',
+                text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}',
+                recipient=user
+            )
         return super(TestCommentCreateView, self).form_valid(form)
 
 class TestCommentUpdateView(LoginRequiredMixin, generic.UpdateView):
@@ -486,6 +665,8 @@ class TestCommentDeleteView(LoginRequiredMixin, generic.DeleteView):
 
 def project_tickets_csv(request, pk):
     user = request.user
+    if not user.is_authenticated:
+        return redirect('/login/')
     if user.role == 'project_manager':
         project_id = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
     if user.is_organizer or pk in project_id:
@@ -508,8 +689,17 @@ def project_tickets_csv(request, pk):
 
 def project_archive(request, pk):
     user = request.user
+    if not user.is_authenticated:
+        return redirect('/login/')
     if user.is_organizer:
         project = Project.objects.get(id=pk)
         project.archive = True
         project.save()
+        if project.project_manager is not None:
+            project_manager = User.objects.get(username=project.project_manager)
+            Notification.objects.create(
+                title=f'Project archived',
+                text=f'Project "{project.title}" that you manage is now archived',
+                recipient=project_manager
+            )
     return redirect('/dashboard/')

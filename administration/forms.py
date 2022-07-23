@@ -5,6 +5,7 @@ from django.db.models import Q
 
 
 class MemberModelForm(forms.ModelForm):
+
     class Meta:
       model = User
       fields = (

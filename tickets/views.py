@@ -15,6 +15,18 @@ class SignupView(generic.CreateView):
     template_name = "registration/signup.html"
     form_class = CustomUserCreationForm
 
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.save()
+        username = form.cleaned_data['username']
+        user = User.objects.get(username=username)
+        Notification.objects.create(
+            title=f'Welcome to Tracer',
+            text=f'Hello {username}, hope you will enjoy your work using our app!',
+            recipient=user
+        )
+        return super(SignupView, self).form_valid(form)
+
     def get_success_url(self):
         return reverse("login")
 

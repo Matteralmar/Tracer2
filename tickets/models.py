@@ -99,6 +99,13 @@ class Ticket(models.Model):
 def handle_upload_comments(instance, filename):
     return f"ticket_comments/ticket_{instance.ticket.pk}/{filename}"
 
+class Notification(models.Model):
+    title = models.TextField()
+    text = models.TextField()
+    created_date = models.DateTimeField(default=timezone.now)
+    recipient = models.ForeignKey('User', on_delete=models.CASCADE, related_name='notifications')
+
+
 class Comment(models.Model):
     ticket = models.ForeignKey(Ticket, related_name="comments", on_delete=models.CASCADE)
     author = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL)
@@ -108,6 +115,8 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.ticket.title
+
+
 
 
 def post_user_created_signal(sender, instance, created, **kwargs):

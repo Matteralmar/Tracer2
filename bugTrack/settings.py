@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'dashboard',
     'account',
     'archive',
+    'notifications',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -137,7 +138,7 @@ USE_TZ = True
 TAILWIND_APP_NAME = 'theme'
 
 #TODO NMP path
-#NPM_BIN_PATH = "/usr/local/bin/npm.cmd"
+#NPM_BIN_PATH = '/mnt/c/Program Files/nodejs//npm'
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [

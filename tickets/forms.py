@@ -2,6 +2,7 @@ from django import forms
 from .models import *
 from django.contrib.auth.forms import UserCreationForm, UsernameField
 from django.contrib.auth import get_user_model
+from datetime import datetime
 
 User = get_user_model()
 
@@ -30,6 +31,7 @@ class TicketModelForm(forms.ModelForm):
             members = Member.objects.filter(user=user, organisation=user.member.organisation)
             projects = Project.objects.filter(organisation=user.member.organisation, title=user.ticket_flow, archive=archived)
         super(TicketModelForm, self).__init__(*args, **kwargs)
+        self.fields["due_to"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
         self.fields["assigned_to"].queryset = members
         self.fields["project"].queryset = projects
 
