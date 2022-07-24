@@ -21,3 +21,4 @@ class AccountUpdateView(LoginRequiredMixin, generic.UpdateView):
 
 
 
+

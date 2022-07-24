@@ -71,7 +71,7 @@ class MemberCreateView(ManagerOrganizerAndLoginRequiredMixin, generic.CreateView
             )
         send_mail(
             subject="You are invited to be a member",
-            message="You were added as a member of a team. Please login to start working",
+            message="You were added as a member of a team. Please login to start your work",
             from_email="ultramacflaw@gmail.com",
             recipient_list=[user.email]
         )
@@ -147,4 +147,5 @@ class MemberDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
         else:
             user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id',flat=True).distinct()
         return User.objects.filter(pk__in=user_id)
+
 

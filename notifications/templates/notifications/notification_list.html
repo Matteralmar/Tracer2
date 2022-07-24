@@ -28,7 +28,7 @@
 
 {% block content %}
 <div class="max-w-lg mx-auto">
-    <a class="hover:text-blue-500" href="{% url 'dashboard:dashboard-chart' %}">Go to dashboard</a>
+    <a class="hover:text-blue-400" href="{% url 'dashboard:dashboard-chart' %}">Go to dashboard</a>
     <hr/>
     <div class="py-5 border-5 border-gray-200">
         <h1 class="text-4xl test-gray-800">Your Notifications:</h1>
@@ -39,7 +39,7 @@
           <input type="text" id="filter" name="filter" class="w-full bg-gray-100 rounded border bg-opacity-50 border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none text-gray-700 px-3 leading-8 transition-colors duration-200 ease-in-out">
         </div>
         <div>
-            <a class="text-gray-500 hover:text-red-300" href="{% url 'notifications:notification-delete-all' %}">Delete all</a>
+            <a class="text-gray-500 hover:text-rose-400" href="{% url 'notifications:notification-delete-all' %}">Delete all</a>
         </div>
       </div>
 

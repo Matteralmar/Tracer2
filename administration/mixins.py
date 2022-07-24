@@ -20,6 +20,18 @@ class NotManagerAndLoginRequiredMixin(AccessMixin):
             return redirect("tickets:ticket-list")
         return super().dispatch(request, *args, **kwargs)
 
+class ManagerAndLoginRequiredMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.role == 'project_manager':
+            return redirect("dashboard:dashboard-chart")
+        return super().dispatch(request, *args, **kwargs)
+
+class TesterAndLoginRequiredMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.role == 'tester':
+            return redirect("dashboard:dashboard-chart")
+        return super().dispatch(request, *args, **kwargs)
+
 class CommentAndLoginRequiredMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         user = self.request.user.id
