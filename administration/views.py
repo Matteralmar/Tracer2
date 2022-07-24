@@ -66,7 +66,7 @@ class MemberCreateView(ManagerOrganizerAndLoginRequiredMixin, generic.CreateView
             recipient = User.objects.get(id=user_s.member.organisation.id)
             Notification.objects.create(
                 title=f'New user',
-                text=f'User {user.username}/{user.get_role_display()} was created by {self.request.user}',
+                text=f'User {user.username} was created by {self.request.user}',
                 recipient=recipient
             )
         send_mail(
@@ -102,23 +102,31 @@ class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView
         return kwargs
 
     def form_valid(self, form):
-        user = User.objects.get(pk=self.kwargs["pk"])
+        user_c = User.objects.get(pk=self.kwargs["pk"])
         ticket_flow = form.cleaned_data['ticket_flow']
         role = form.cleaned_data['role']
-        if role != user.role:
-            user = User.objects.get(username=user.username)
+        if role != user_c.role:
+            user = User.objects.get(username=user_c.username)
             Notification.objects.create(
-                title=f'Role',
+                title=f'Role change',
                 text=f'Your role was changed to "{role}" by {self.request.user.username}',
                 recipient=user
             )
-        if user.ticket_flow != ticket_flow:
-            user = User.objects.get(username=user.username)
+        if user_c.ticket_flow != ticket_flow:
+            user = User.objects.get(username=user_c.username)
             Notification.objects.create(
-                title=f'Ticket flow',
+                title=f'Ticket flow change',
                 text=f'Your ticket flow was altered to "{ticket_flow}" by {self.request.user.username}',
                 recipient=user
             )
+        if self.request.user.role == 'project_manager':
+            user = User.objects.get(username=self.request.user.member.organisation)
+            Notification.objects.create(
+                title=f'User update',
+                text=f'User "{user_c}" was updated by {self.request.user.username}',
+                recipient=user
+            )
+
         return super(MemberUpdateView, self).form_valid(form)
 
     def get_queryset(self):

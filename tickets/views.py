@@ -178,7 +178,7 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
             assigned_to = form.cleaned_data['assigned_to']
             project = form.cleaned_data['project']
             if ticket.title != titl:
-                if ticket.assigned_to is not None:
+                if ticket.assigned_to is not None and ticket.assigned_to == assigned_to:
                     user = User.objects.get(username=ticket.assigned_to)
                     Notification.objects.create(
                         title=f'Ticket name change',
