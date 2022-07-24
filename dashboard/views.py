@@ -121,12 +121,12 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
         color_code_client = self.request.POST['CI']
         color_data.color_code = color_code_client
         project = Project.objects.get(pk=self.kwargs["pk"])
+        titl = form.cleaned_data['title']
         if self.request.user.is_organizer:
             project_manager = form.cleaned_data['project_manager']
-            titl = form.cleaned_data['title']
             color_data.save()
             if project.title != titl:
-                if project.project_manager is not None:
+                if project.project_manager is not None and project_manager == project.project_manager:
                     user = User.objects.get(username=project.project_manager)
                     Notification.objects.create(
                         title=f'Project name change',
@@ -137,7 +137,7 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
                 user = User.objects.get(username=project.project_manager)
                 Notification.objects.create(
                     title=f'Project update',
-                    text=f'Your "{project.title}" project was assigned to you by {self.request.user.username}',
+                    text=f'Your "{titl}" project was assigned to you by {self.request.user.username}',
                     recipient=user
                 )
                 return super(ProjectUpdateView, self).form_valid(form)
@@ -145,13 +145,13 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
                 user = User.objects.get(username=project_manager)
                 Notification.objects.create(
                     title=f'New project',
-                    text=f'"{project.title}" project was assigned to you by {self.request.user.username}',
+                    text=f'"{titl}" project was assigned to you by {self.request.user.username}',
                     recipient=user
                 )
                 user = User.objects.get(username=project.project_manager)
                 Notification.objects.create(
                     title=f'Unassigned project',
-                    text=f'"{project.title}" project was unassigned from you by {self.request.user.username}',
+                    text=f'"{titl}" project was unassigned from you by {self.request.user.username}',
                     recipient=user
                 )
                 return super(ProjectUpdateView, self).form_valid(form)
@@ -159,7 +159,7 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
                 user = User.objects.get(username=project_manager)
                 Notification.objects.create(
                     title=f'New project',
-                    text=f'"{project.title}" project was assigned to you by {self.request.user.username}',
+                    text=f'"{titl}" project was assigned to you by {self.request.user.username}',
                     recipient=user
                 )
                 return super(ProjectUpdateView, self).form_valid(form)
@@ -167,20 +167,34 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
                 user = User.objects.get(username=project.project_manager)
                 Notification.objects.create(
                     title=f'Unassigned project',
-                    text=f'"{project.title}" project was unassigned from you by {self.request.user.username}',
+                    text=f'"{titl}" project was unassigned from you by {self.request.user.username}',
                     recipient=user
                 )
                 return super(ProjectUpdateView, self).form_valid(form)
         progress = form.cleaned_data['progress']
-        color_data.save()
-        if progress == 'closed' and self.request.user.role == 'project_manager':
-            user_id = Member.objects.filter(user=self.request.user).values_list('organisation', flat=True)[0]
-            user = User.objects.get(id=user_id)
+        if self.request.user.role == 'project_manager':
+            user = User.objects.get(id=self.request.user.member.organisation.id)
+            if project.title != titl:
+                    Notification.objects.create(
+                        title=f'Project name change',
+                        text=f'There was a name change of "{project.title}" into "{titl}" by {self.request.user.username}',
+                        recipient=user
+                    )
+            if progress == 'closed' and project.progress != 'closed':
+                Notification.objects.create(
+                    title=f'Project closed',
+                    text=f'"{titl}" project was closed by {self.request.user.username}',
+                    recipient=user
+                )
+                color_data.save()
+                return super(ProjectUpdateView, self).form_valid(form)
             Notification.objects.create(
-                title=f'Project closed',
-                text=f'"{project.title}" project was closed by {self.request.user.username}',
+                title=f'Project update',
+                text=f'"{titl}" project was updated by {self.request.user.username}',
                 recipient=user
             )
+            color_data.save()
+        color_data.save()
         return super(ProjectUpdateView, self).form_valid(form)
 
     def get_success_url(self):
@@ -349,7 +363,7 @@ class ManagementTicketUpdateView(ManagerAndLoginRequiredMixin, generic.UpdateVie
         assigned_to = form.cleaned_data['assigned_to']
         titl = form.cleaned_data['title']
         if ticket.title != titl:
-            if ticket.assigned_to is not None:
+            if ticket.assigned_to is not None and assigned_to == ticket.assigned_to:
                 user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Ticket name change',
@@ -542,7 +556,7 @@ class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
         assigned_to = form.cleaned_data['assigned_to']
         titl = form.cleaned_data['title']
         if ticket.title != titl:
-            if ticket.assigned_to is not None:
+            if ticket.assigned_to is not None and assigned_to == ticket.assigned_to:
                 user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Ticket name change',
