@@ -15,7 +15,7 @@ class User(AbstractUser):
     email = models.CharField(max_length=90, unique=True)
     is_organizer = models.BooleanField(default=True)
     is_member = models.BooleanField(default=False)
-    role = models.TextField(choices=ROLE_CHOICES)
+    role = models.TextField(choices=ROLE_CHOICES, null=False)
     ticket_flow = models.ForeignKey('Project', null=True, blank=True, on_delete=models.SET_NULL)
 
 class Account(models.Model):
