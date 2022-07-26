@@ -11,6 +11,37 @@ from administration.mixins import *
 from django.db.models import Count, Q
 
 
+#class ProjectAutocomplete(LoginRequiredMixin, autocomplete.Select2QuerySetView):
+#    def get_queryset(self):
+#        qs = Project.objects.all()
+#        assigned_to = self.forwarded.get('assigned_to', None)
+#        print(assigned_to)
+#        if self.request.user.is_organizer:
+#            results = User.objects.filter(id=assigned_to)
+#            for usr in results:
+#                proj = list(usr.ticket_flow.all())
+#            qs = qs.filter(title__in=proj, archive=False)
+#        if self.request.user.role == 'project_manager':
+#            results = User.objects.filter(id=assigned_to)
+#            for usr in results:
+#                proj = list(usr.ticket_flow.all())
+#            qs = qs.filter(project_manager__user=user, archive=False) & Project.objects.filter(title__in=proj, archive=False)
+#        if self.request.user.role == 'tester':
+#            results = User.objects.filter(id=assigned_to)
+#            for usr in results:
+#                proj_1 = list(usr.ticket_flow.all())
+#            results = User.objects.filter(id=self.request.user.id)
+#            for usr in results:
+#                proj_2 = list(usr.ticket_flow.all())
+#            qs = qs.filter(title__in=proj_1, archive=False) & Project.objects.filter(title__in=proj_2,archive=False)
+#        if self.request.user.role == 'developer':
+#            results = User.objects.filter(id=assigned_to)
+#            for usr in results:
+#                proj = list(usr.ticket_flow.all())
+#            qs = qs.filter(title__in=proj, archive=False)
+#        return qs
+
+
 class SignupView(generic.CreateView):
     template_name = "registration/signup.html"
     form_class = CustomUserCreationForm
@@ -471,8 +502,9 @@ class TicketCategoryUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateVi
             id = self.kwargs["pk"]
             ticket = Ticket.objects.get(id=id)
             project_id = Ticket.objects.filter(id=id).values_list('project', flat=True)[0]
+            project = Project.objects.filter(id=project_id)
+            users = User.objects.filter(ticket_flow__in=project, role='tester')
             project = Project.objects.get(id=project_id)
-            users = User.objects.filter(ticket_flow=project, role='tester')
             if len(users) != 0:
                 for user in users:
                     Notification.objects.create(

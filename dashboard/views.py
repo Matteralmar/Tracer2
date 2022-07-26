@@ -26,11 +26,11 @@ class DashboardChartView(LoginRequiredMixin, generic.ListView):
             queryset = Project.objects.filter(organisation=user.member.organisation)
             queryset = queryset.filter(project_manager__user=user)
         else:
-            queryset = Project.objects.filter(title=user.ticket)
-           # results = User.objects.filter(id=user.id)
-           # for usr in results:
-           #     proj = list(usr.ticket_flow.all())
-           # queryset = Project.objects.filter(title__in=proj)
+            #queryset = Project.objects.filter(title=user.ticket)
+            results = User.objects.filter(id=user.id)
+            for usr in results:
+                proj = list(usr.ticket_flow.all())
+            queryset = Project.objects.filter(title__in=proj)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -103,9 +103,9 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
     def get_queryset(self):
         user = self.request.user
         if user.is_organizer:
-            queryset = Project.objects.filter(organisation=user.account)
+            queryset = Project.objects.filter(organisation=user.account, archive=False)
         else:
-            queryset = Project.objects.filter(organisation=user.member.organisation)
+            queryset = Project.objects.filter(organisation=user.member.organisation, archive=False)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -210,7 +210,7 @@ class ProjectDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Project.objects.filter(organisation=user.account)
+        queryset = Project.objects.filter(organisation=user.account, archive=False)
         return queryset
 
     def form_valid(self, form):
@@ -266,9 +266,9 @@ class ProjectDetailView(LoginRequiredMixin, generic.DetailView):
     def get_queryset(self):
         user = self.request.user
         if user.is_organizer:
-            queryset = Project.objects.filter(organisation=user.account)
+            queryset = Project.objects.filter(organisation=user.account, archive=False)
         else:
-            queryset = Project.objects.filter(organisation=user.member.organisation)
+            queryset = Project.objects.filter(organisation=user.member.organisation, archive=False)
         return queryset
 
 
@@ -508,7 +508,11 @@ class ProjectTestView(TesterAndLoginRequiredMixin, generic.ListView):
         id = self.request.path.split('/')[4]
         self.request.session['project_id'] = id
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
-        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation, id=id).values_list('id', flat=True)
+        results = User.objects.filter(id=user.id)
+        for usr in results:
+            proj = list(usr.ticket_flow.all())
+
+        project = Project.objects.filter(title__in=proj, organisation=user.member.organisation, id=id, archive=False).values_list('id', flat=True)
         if len(project) == 0:
             raise Http404
         queryset = Ticket.objects.filter(Q(tester__in=[user.id]) | Q(tester__isnull=True,), project__in=project, status_id__in=status_id,)
@@ -518,7 +522,11 @@ class ProjectTestView(TesterAndLoginRequiredMixin, generic.ListView):
         user = self.request.user
         context = super(ProjectTestView, self).get_context_data(**kwargs)
         id = self.request.path.split('/')[4]
-        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation, id=id).values_list('id', flat=True)
+        results = User.objects.filter(id=user.id)
+        for usr in results:
+            proj = list(usr.ticket_flow.all())
+
+        project = Project.objects.filter(title__in=proj, organisation=user.member.organisation, id=id).values_list('id', flat=True)
         self.request.session['project_id'] = id
 
         status_id = Ticket.objects.filter(project__in=project).values_list('status_id', flat=True)
@@ -551,7 +559,10 @@ class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
     def get_queryset(self):
         user = self.request.user
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
-        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
+        results = User.objects.filter(id=user.id)
+        for usr in results:
+            proj = list(usr.ticket_flow.all())
+        project = Project.objects.filter(title__in=proj, organisation=user.member.organisation, archive=False).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project, status_id__in=status_id)
         return queryset
 
@@ -619,7 +630,10 @@ class TestTicketDetailView(TesterAndLoginRequiredMixin, generic.DetailView):
     def get_queryset(self):
         user = self.request.user
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
-        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
+        results = User.objects.filter(id=user.id)
+        for usr in results:
+            proj = list(usr.ticket_flow.all())
+        project = Project.objects.filter(title__in=proj, organisation=user.member.organisation, archive=False).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project, status_id__in=status_id)
         return queryset
 
@@ -633,7 +647,10 @@ class TestCommentCreateView(LoginRequiredMixin, generic.CreateView):
     def get_context_data(self, **kwargs):
         user = self.request.user
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
-        project = Project.objects.filter(title=user.ticket_flow, organisation=user.member.organisation).values_list('id', flat=True)
+        results = User.objects.filter(id=user.id)
+        for usr in results:
+            proj = list(usr.ticket_flow.all())
+        project = Project.objects.filter(title__in=proj, organisation=user.member.organisation, archive=False).values_list('id', flat=True)
         queryset = Ticket.objects.filter(project__in=project, status_id__in=status_id).values_list('id', flat=True)
         if self.kwargs["pk"] not in queryset:
             raise Http404
@@ -688,7 +705,7 @@ def project_tickets_csv(request, pk):
     if not user.is_authenticated:
         return redirect('/login/')
     if user.role == 'project_manager':
-        project_id = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation).values_list('id', flat=True)
+        project_id = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation, archive=False).values_list('id', flat=True)
     if user.is_organizer or pk in project_id:
         response = HttpResponse(content_type='text/csv')
         if user.is_organizer:
@@ -712,7 +729,7 @@ def project_archive(request, pk):
     if not user.is_authenticated:
         return redirect('/login/')
     if user.is_organizer:
-        project = Project.objects.get(id=pk)
+        project = Project.objects.get(id=pk, archive=False)
         project.archive = True
         project.save()
         if project.project_manager is not None:

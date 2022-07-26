@@ -91,7 +91,7 @@
                         {% for ticket in tickets %}
                             {% if ticket.project.archive != True %}
                             <tr class="bg-white">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     <a class="text-blue-500 hover:text-blue-800" href="{% url 'tickets:ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

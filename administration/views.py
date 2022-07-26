@@ -103,20 +103,12 @@ class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView
 
     def form_valid(self, form):
         user_c = User.objects.get(pk=self.kwargs["pk"])
-        ticket_flow = form.cleaned_data['ticket_flow']
         role = form.cleaned_data['role']
         if role != user_c.role:
             user = User.objects.get(username=user_c.username)
             Notification.objects.create(
                 title=f'Role change',
                 text=f'Your role was changed to "{role}" by {self.request.user.username}',
-                recipient=user
-            )
-        if user_c.ticket_flow != ticket_flow:
-            user = User.objects.get(username=user_c.username)
-            Notification.objects.create(
-                title=f'Ticket flow change',
-                text=f'Your ticket flow was altered to "{ticket_flow}" by {self.request.user.username}',
                 recipient=user
             )
         if self.request.user.role == 'project_manager':

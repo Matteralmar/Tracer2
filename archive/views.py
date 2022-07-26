@@ -19,7 +19,7 @@ class ProjectArchiveDetailView(OrganizerAndLoginRequiredMixin, generic.DetailVie
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Project.objects.filter(organisation=user.account)
+        queryset = Project.objects.filter(organisation=user.account, archive=True)
         return queryset
 
 
@@ -28,7 +28,7 @@ def undo_archive(request, pk):
     if not user.is_authenticated:
         return redirect('/login/')
     if user.is_organizer:
-        project = Project.objects.get(id=pk)
+        project = Project.objects.get(id=pk, archive=True)
         project.archive = False
         project.save()
     return redirect('/dashboard/')
