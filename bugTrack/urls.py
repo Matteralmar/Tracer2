@@ -19,6 +19,7 @@ from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView, 
 from django.contrib import admin
 from django.urls import path, include
 from tickets.views import LandingPageView, SignupView
+from administration.decorators import already_logged
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,12 +30,12 @@ urlpatterns = [
     path('archive/', include('archive.urls', namespace="archive")),
     path('account/', include('account.urls', namespace="account")),
     path('notifications/', include('notifications.urls', namespace="notifications")),
-    path('login/', LoginView.as_view(), name='login'),
-    path('signup/', SignupView.as_view(), name='signup'),
-    path('reset-password/', PasswordResetView.as_view(), name='reset-password'),
-    path('password-reset-done/', PasswordResetDoneView.as_view(), name='password_reset_done'),
-    path('password-reset-confirm/<uidb64>/<token>/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
-    path('password-reset-complete/', PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+    path('login/', LoginView.as_view(redirect_authenticated_user=True), name='login'),
+    path('signup/', already_logged(SignupView.as_view()), name='signup'),
+    path('reset-password/', already_logged(PasswordResetView.as_view()), name='reset-password'),
+    path('password-reset-done/', already_logged(PasswordResetDoneView.as_view()), name='password_reset_done'),
+    path('password-reset-confirm/<uidb64>/<token>/', already_logged(PasswordResetConfirmView.as_view()), name='password_reset_confirm'),
+    path('password-reset-complete/', already_logged(PasswordResetCompleteView.as_view()), name='password_reset_complete'),
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
 

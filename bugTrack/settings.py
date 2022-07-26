@@ -158,9 +158,11 @@ AUTH_USER_MODEL = 'tickets.User'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+REDIRECT_FIELD_NAME = "/dashboard"
 LOGIN_REDIRECT_URL = "/dashboard"
 LOGIN_URL = "/login"
 LOGOUT_REDIRECT_URL = "/login"
+
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "tailwind"
 CRISPY_TEMPLATE_PACK = 'tailwind'
