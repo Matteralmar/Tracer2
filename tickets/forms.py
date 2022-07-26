@@ -30,6 +30,10 @@ class TicketModelForm(forms.ModelForm):
         else:
             members = Member.objects.filter(user=user, organisation=user.member.organisation)
             projects = Project.objects.filter(organisation=user.member.organisation, title=user.ticket_flow, archive=archived)
+           # results = User.objects.filter(id=user.id)
+           # for usr in results:
+           #     proj = list(usr.ticket_flow.all())
+           # projects = Project.objects.filter(title__in=proj)
         super(TicketModelForm, self).__init__(*args, **kwargs)
         self.fields["due_to"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
         self.fields["assigned_to"].queryset = members

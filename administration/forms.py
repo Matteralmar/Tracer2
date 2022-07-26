@@ -14,7 +14,6 @@ class MemberModelForm(forms.ModelForm):
           'last_name',
           'email',
           'role',
-          'ticket_flow'
       )
     def __init__(self, *args, **kwargs):
         request = kwargs.pop("request")
@@ -28,4 +27,4 @@ class MemberModelForm(forms.ModelForm):
                 ('tester', 'Tester'),
                 ('developer', 'Developer'),
             )
-        self.fields["ticket_flow"].queryset = projects
+        self.fields["ticket_flow"] = projects#forms.ModelMultipleChoiceField(required=True, queryset=Project.objects.all())
