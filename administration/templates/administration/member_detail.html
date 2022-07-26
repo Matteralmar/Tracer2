@@ -17,16 +17,22 @@
           </a>
         </div>
         <div class="flex border-t border-gray-300 py-2">
-                <span class="text-gray-500">Full Name</span>
+                <span class="text-gray-500"><b>Full Name</b></span>
                 <span class="ml-auto text-gray-900">{{ member.first_name }} {{ member.last_name }}</span>
             </div>
             <div class="flex border-t border-gray-300 py-2">
-                <span class="text-gray-500">Email</span>
+                <span class="text-gray-500"><b>Email</b></span>
                 <span class="ml-auto text-gray-900">{{ member.email }}</span>
             </div>
-          <div class="flex border-t border-b mb-6 border-gray-300 py-2">
-                <span class="text-gray-500">Role</span>
+          <div class="flex border-t border-b border-gray-300 py-2">
+                <span class="text-gray-500"><b>Role</b></span>
                 <span class="ml-auto text-gray-900">{{ member.get_role_display }}</span>
+            </div>
+          <div class="flex py-2 border-b border-gray-300">
+                <span class="text-gray-500"><b>Ticket flow:</b>
+                    {% for project in member.ticket_flow.all %}<p class="ml-auto text-gray-900"> {{ project }}</p> {% endfor %}
+                </span>
+
             </div>
       </div>
     </div>

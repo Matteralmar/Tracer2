@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load tailwind_filters %}
+{% load crispy_forms_tags %}
 
 {% block content %}
 <div class="max-w-lg mx-auto">
@@ -9,9 +10,32 @@
             <h1 class="text-4xl test-gray-800">Create a new member</h1>
         </div>
         <form method="post">
-            {% csrf_token %}
-            {{ form|crispy }}
-            <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">Submit</button>
-        </form>
+              {% csrf_token %}
+              <div class="row">
+                  <div class="col-6">
+                    {{ form.username|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.first_name|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.last_name|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.email|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.role|as_crispy_field }}
+                  </div>
+                  <div id="div_id_ticket_flow" class="col-6 mb-3">
+                      <label for="id_ticket_flow" class="block text-gray-700 text-sm font-bold mb-2">
+                        Ticket flow
+                      </label>
+                    {{ form.ticket_flow }}
+                  </div>
+              </div>
+
+            <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
+          </form>
     </div>
 {% endblock content %}

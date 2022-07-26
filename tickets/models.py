@@ -16,8 +16,7 @@ class User(AbstractUser):
     is_organizer = models.BooleanField(default=True)
     is_member = models.BooleanField(default=False)
     role = models.TextField(choices=ROLE_CHOICES)
-    ticket_flow = models.ForeignKey('Project', null=True, blank=True, on_delete=models.SET_NULL)
-    #ticket_flow = models.ManyToManyField('Project')
+    ticket_flow = models.ManyToManyField('Project')
 
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

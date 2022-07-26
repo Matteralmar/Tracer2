@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load tailwind_filters %}
+{% load crispy_forms_tags %}
 
 {% block content %}
 
@@ -18,8 +19,31 @@
           </a>
         </div>
           <form method="post">
-            {% csrf_token %}
-            {{ form|crispy }}
+              {% csrf_token %}
+              <div class="row">
+                  <div class="col-6">
+                    {{ form.username|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.first_name|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.last_name|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.email|as_crispy_field }}
+                  </div>
+                  <div class="col-6">
+                    {{ form.role|as_crispy_field }}
+                  </div>
+                  <div id="div_id_ticket_flow" class="col-6 mb-3">
+                      <label for="id_ticket_flow" class="block text-gray-700 text-sm font-bold mb-2">
+                        Ticket flow
+                      </label>
+                    {{ form.ticket_flow }}
+                  </div>
+              </div>
+
             <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
           </form>
         {% if request.user.is_organizer %}

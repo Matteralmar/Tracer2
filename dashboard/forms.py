@@ -28,6 +28,7 @@ class ProjectModelForm(forms.ModelForm):
 
 
 
+
 class ManagementTicketModelForm(forms.ModelForm):
     class Meta:
         model = Ticket
