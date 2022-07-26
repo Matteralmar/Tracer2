@@ -26,7 +26,11 @@ class DashboardChartView(LoginRequiredMixin, generic.ListView):
             queryset = Project.objects.filter(organisation=user.member.organisation)
             queryset = queryset.filter(project_manager__user=user)
         else:
-            queryset = Project.objects.filter(title=user.ticket_flow)
+            queryset = Project.objects.filter(title=user.ticket)
+           # results = User.objects.filter(id=user.id)
+           # for usr in results:
+           #     proj = list(usr.ticket_flow.all())
+           # queryset = Project.objects.filter(title__in=proj)
         return queryset
 
     def get_context_data(self, **kwargs):

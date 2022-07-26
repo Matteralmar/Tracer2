@@ -131,3 +131,4 @@ dmypy.json
 media_root/
 static/
 static_root/
+staticfiles-cdn/
