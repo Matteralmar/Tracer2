@@ -222,7 +222,7 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
                     user = User.objects.get(id=user_id[0])
                     Notification.objects.create(
                         title=f'Ticket name change',
-                        text=f'There was a name change of "{ticket.title}" into "{titl}" of your "{ticket.project}" project by {self.request.user.username}',
+                        text=f'There was a name change of "{ticket.title}" into "{titl}" ticket from your "{ticket.project}" project by {self.request.user.username}',
                         recipient=user
                     )
             if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
@@ -242,7 +242,7 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
                 user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Unassigned ticket',
-                    text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                    text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
                     recipient=user
                 )
             if ticket.assigned_to is None and assigned_to is not None:
@@ -256,7 +256,7 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
                 user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Unassigned ticket',
-                    text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}',
+                    text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
                     recipient=user
                 )
 
@@ -286,7 +286,7 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
                     user = User.objects.get(id=user_id[0])
                     Notification.objects.create(
                         title=f'Unassigned ticket',
-                        text=f'"{titl}" ticket was unassigned from your "{ticket.project}" project by {self.request.user.username}',
+                        text=f'"{ticket.title}" ticket was unassigned from your "{ticket.project}" project by {self.request.user.username}',
                         recipient=user
                     )
             return super(TicketUpdateView, self).form_valid(form)
@@ -497,8 +497,8 @@ class TicketCategoryUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateVi
 
     def form_valid(self, form):
         status = form.cleaned_data['status']
-        test_status = Status.objects.filter(name=status).values_list('test_status', flat=True)[0]
-        if test_status:
+        test_status = Status.objects.filter(name=status).values_list('test_status', flat=True)
+        if len(test_status) != 0 and test_status[0]:
             id = self.kwargs["pk"]
             ticket = Ticket.objects.get(id=id)
             project_id = Ticket.objects.filter(id=id).values_list('project', flat=True)[0]

@@ -30,7 +30,7 @@
             </div>
           <div class="flex py-2 border-b border-gray-300">
                 <span class="text-gray-500"><b>Ticket flow:</b>
-                    {% for project in member.ticket_flow.all %}<p class="ml-auto text-gray-900"> {{ project }}</p> {% endfor %}
+                    {% for project in member.ticket_flow.all %}{% if not project.archive %}<p class="ml-auto text-gray-900"> {{ project }}</p>{% endif %}{% endfor %}
                 </span>
 
             </div>
