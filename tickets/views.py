@@ -3,7 +3,7 @@ from django.core.mail import send_mail
 from django.http.response import JsonResponse
 from django.shortcuts import render, redirect, reverse
 from django.contrib.auth.forms import UserCreationForm
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.views import generic
 from .models import *
 from .forms import *
@@ -343,8 +343,13 @@ class AssignMemberView(OrganizerAndLoginRequiredMixin, generic.FormView):
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(AssignMemberView, self).get_form_kwargs(**kwargs)
+        user = self.request.user
+        project = Project.objects.filter(organisation=user.account, archive=False).values_list('id', flat=True)
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        if ticket.project in project:
+            raise Http404
         kwargs.update({
-            "request":self.request
+            "request": self.request
         })
         return kwargs
 
@@ -754,9 +759,16 @@ class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(CommentCreateView, self).get_context_data(**kwargs)
-        project = Project.objects.filter(archive=False)
+        user = self.request.user
+        if user.is_organizer:
+            project = Project.objects.filter(organisation=user.account, archive=False).values_list('id', flat=True)
+        else:
+            project = Project.objects.filter(organisation=user.member.organisation, archive=False).values_list('id',flat=True)
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        if ticket.project in project:
+            raise Http404
         context.update({
-            "ticket": Ticket.objects.get(pk=self.kwargs["pk"], project__in=project),
+            "ticket": ticket,
         })
         return context
 
