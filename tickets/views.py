@@ -102,13 +102,14 @@ class TicketDetailView(NotManagerAndLoginRequiredMixin, generic.DetailView):
 
     def get_queryset(self):
         user = self.request.user
+        project = Project.objects.filter(archive=False)
         if user.is_organizer:
-            queryset = Ticket.objects.filter(organisation=user.account)
+            queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
             queryset = queryset.filter(assigned_to__user=user)
         else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
         return queryset
 
 
@@ -188,13 +189,14 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
 
     def get_queryset(self):
         user = self.request.user
+        project = Project.objects.filter(archive=False)
         if user.is_organizer:
-            queryset = Ticket.objects.filter(organisation=user.account)
+            queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
             queryset = queryset.filter(assigned_to__user=user)
         else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
         return queryset
 
 
@@ -298,13 +300,14 @@ class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
+        project = Project.objects.filter(archive=False)
         if user.is_organizer:
-            queryset = Ticket.objects.filter(organisation=user.account)
+            queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
             queryset = queryset.filter(assigned_to__user=user)
         else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
         return queryset
 
     def form_valid(self, form):
@@ -350,7 +353,8 @@ class AssignMemberView(OrganizerAndLoginRequiredMixin, generic.FormView):
 
     def form_valid(self, form):
         member = form.cleaned_data["member"]
-        ticket = Ticket.objects.get(id=self.kwargs["pk"])
+        project = Project.objects.filter(archive=False)
+        ticket = Ticket.objects.get(id=self.kwargs["pk"], project__in=project)
         ticket.assigned_to = member
         ticket.save()
         user = User.objects.get(username=ticket.assigned_to)
@@ -485,13 +489,14 @@ class TicketCategoryUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateVi
 
     def get_queryset(self):
         user = self.request.user
+        project = Project.objects.filter(archive=False)
         if user.is_organizer:
-            queryset = Ticket.objects.filter(organisation=user.account)
+            queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
             queryset = queryset.filter(assigned_to__user=user)
         else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
 
         return queryset
 
@@ -749,14 +754,16 @@ class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs):
         context = super(CommentCreateView, self).get_context_data(**kwargs)
+        project = Project.objects.filter(archive=False)
         context.update({
-            "ticket": Ticket.objects.get(pk=self.kwargs["pk"]),
+            "ticket": Ticket.objects.get(pk=self.kwargs["pk"], project__in=project),
         })
         return context
 
     def form_valid(self, form):
         user = self.request.user
-        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        project = Project.objects.filter(archive=False)
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"], project__in=project)
         comment = form.save(commit=False)
         comment.ticket = ticket
         comment.author = user
