@@ -155,7 +155,7 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
                 user = User.objects.get(username=project.project_manager)
                 Notification.objects.create(
                     title=f'Unassigned project',
-                    text=f'"{titl}" project was unassigned from you by {self.request.user.username}',
+                    text=f'"{project.title}" project was unassigned from you by {self.request.user.username}',
                     recipient=user
                 )
                 return super(ProjectUpdateView, self).form_valid(form)
@@ -171,7 +171,7 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
                 user = User.objects.get(username=project.project_manager)
                 Notification.objects.create(
                     title=f'Unassigned project',
-                    text=f'"{titl}" project was unassigned from you by {self.request.user.username}',
+                    text=f'"{project.title}" project was unassigned from you by {self.request.user.username}',
                     recipient=user
                 )
                 return super(ProjectUpdateView, self).form_valid(form)
@@ -392,7 +392,7 @@ class ManagementTicketUpdateView(ManagerAndLoginRequiredMixin, generic.UpdateVie
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
+                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
@@ -408,7 +408,7 @@ class ManagementTicketUpdateView(ManagerAndLoginRequiredMixin, generic.UpdateVie
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
+                text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(ManagementTicketUpdateView, self).form_valid(form)
