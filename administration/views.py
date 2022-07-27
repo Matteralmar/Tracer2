@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from tickets.models import *
 from .forms import *
 from .mixins import *
+from django.db.models import Q
 
 
 
@@ -85,9 +86,11 @@ class MemberDetailView(ManagerOrganizerAndLoginRequiredMixin, generic.DetailView
         user = self.request.user
         if user.is_organizer:
             user_id = Member.objects.filter(organisation=user.account).values_list('user_id', flat=True).distinct()
+            user = User.objects.filter(pk__in=user_id)
         else:
             user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id', flat=True).distinct()
-        return User.objects.filter(pk__in=user_id)
+            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id)
+        return user
 
 class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView):
     template_name = "administration/member_update.html"
@@ -127,9 +130,11 @@ class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView
         user = self.request.user
         if user.is_organizer:
             user_id = Member.objects.filter(organisation=user.account).values_list('user_id', flat=True).distinct()
+            user = User.objects.filter(pk__in=user_id)
         else:
             user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id', flat=True).distinct()
-        return User.objects.filter(pk__in=user_id)
+            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id)
+        return user
 
     def get_success_url(self):
         return reverse("administration:member-list")
@@ -146,8 +151,10 @@ class MemberDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
         user = self.request.user
         if user.is_organizer:
             user_id = Member.objects.filter(organisation=user.account).values_list('user_id', flat=True).distinct()
+            user = User.objects.filter(pk__in=user_id)
         else:
-            user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id',flat=True).distinct()
-        return User.objects.filter(pk__in=user_id)
+            user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id', flat=True).distinct()
+            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id)
+        return user
 
 
