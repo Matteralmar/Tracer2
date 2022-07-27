@@ -449,12 +449,14 @@ class ManagementCommentCreateView(ManagerAndLoginRequiredMixin, generic.CreateVi
         return reverse("dashboard:management-ticket-detail", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
-        chck = Ticket.objects.filter(pk=self.kwargs["pk"]).values_list('project_id', flat=True)[0]
-        if chck != int(self.request.session['project_id']):
+        user = self.request.user
+        project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation,archive=False).values_list('id', flat=True)
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        if ticket.project != project:
             raise Http404
         context = super(ManagementCommentCreateView, self).get_context_data(**kwargs)
         context.update({
-            "ticket": Ticket.objects.get(pk=self.kwargs["pk"])
+            "ticket": ticket
         })
         return context
 
