@@ -27,12 +27,14 @@
                   <div class="col-6">
                     {{ form.role|as_crispy_field }}
                   </div>
-                  <div id="div_id_ticket_flow" class="col-6 mb-3">
+                  {% if form.ticket_flow %}
+                    <div id="div_id_ticket_flow" class="col-6 mb-3">
                       <label for="id_ticket_flow" class="block text-gray-700 text-sm font-bold mb-2">
-                        Ticket flow
+                        Ticket flow<span class="asteriskField">*</span>
                       </label>
-                    {{ form.ticket_flow }}
-                  </div>
+                        {{ form.ticket_flow }}
+                    </div>
+                    {% endif %}<
               </div>
 
             <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>

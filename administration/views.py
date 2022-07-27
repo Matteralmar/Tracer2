@@ -102,13 +102,15 @@ class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView
         return kwargs
 
     def form_valid(self, form):
+        user = form.save(commit=False)
         user_c = User.objects.get(pk=self.kwargs["pk"])
         role = form.cleaned_data['role']
         if role != user_c.role:
+            user.save()
             user = User.objects.get(username=user_c.username)
             Notification.objects.create(
                 title=f'Role change',
-                text=f'Your role was changed to "{role}" by {self.request.user.username}',
+                text=f'Your role was changed to "{user.get_role_display()}" by {self.request.user.username}',
                 recipient=user
             )
         if self.request.user.role == 'project_manager':

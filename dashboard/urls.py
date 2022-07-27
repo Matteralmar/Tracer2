@@ -25,4 +25,5 @@ urlpatterns = [
     path('project/<int:pk>/csv', project_tickets_csv, name='project-tickets-csv'),
     path('project/<int:pk>/update/', ProjectUpdateView.as_view(), name='project-update'),
     path('project/<int:pk>/delete/', ProjectDeleteView.as_view(), name='project-delete'),
+
 ]
