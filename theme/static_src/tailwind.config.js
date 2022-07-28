@@ -12,10 +12,12 @@ module.exports = {
             // Templates in other apps. Uncomment the following line if it matches
             // your project structure or change it to match.
             '../../templates/**/*.html',
-            '../../account/templates/**/*.html',
             '../../tickets/templates/**/*.html',
-            '../../administration/templates/**/*.html',
+            '../../notifications/templates/**/*.html',
             '../../dashboard/templates/**/*.html',
+            '../../archive/templates/**/*.html',
+            '../../administration/templates/**/*.html',
+            '../../account/templates/**/*.html',
     ],
     theme: {
         extend: {},
