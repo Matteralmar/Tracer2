@@ -67,12 +67,12 @@ class MemberCreateView(ManagerOrganizerAndLoginRequiredMixin, generic.CreateView
             recipient = User.objects.get(id=user_s.member.organisation.id)
             Notification.objects.create(
                 title=f'New user',
-                text=f'User {user.username} was created by {self.request.user}',
+                text=f'User "{user.username}" was created by {self.request.user}',
                 recipient=recipient
             )
         send_mail(
             subject="You are invited to be a member",
-            message="You were added as a member of a team. Please login to start your work",
+            message="You were added as a member of a team. Please reset your password with your email and login to start your work.",
             from_email="ultramacflaw@gmail.com",
             recipient_list=[user.email]
         )

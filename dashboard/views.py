@@ -21,16 +21,16 @@ class DashboardChartView(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         user = self.request.user
         if user.is_organizer:
-            queryset = Project.objects.filter(organisation=user.account)
+            queryset = Project.objects.filter(organisation=user.account, archive=False)
         elif user.role == 'project_manager':
             queryset = Project.objects.filter(organisation=user.member.organisation)
-            queryset = queryset.filter(project_manager__user=user)
+            queryset = queryset.filter(project_manager__user=user, archive=False)
         else:
             #queryset = Project.objects.filter(title=user.ticket)
             results = User.objects.filter(id=user.id)
             for usr in results:
                 proj = list(usr.ticket_flow.all())
-            queryset = Project.objects.filter(title__in=proj)
+            queryset = Project.objects.filter(title__in=proj, archive=False)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -62,7 +62,7 @@ class DashboardChartView(LoginRequiredMixin, generic.ListView):
             context["count_types"] = Ticket.objects.filter(project__in=project, type_id__isnull=False).values('type_id').annotate(total=Count('type_id'))
             return context
         elif user.role == 'developer':
-            project = Project.objects.filter(archive=False)
+            project = Project.objects.filter(archive=False, organisation=user.member.organisation)
             status_id = Ticket.objects.filter(assigned_to__user=user, project__in=project).values_list('status_id', flat=True)
             priority_id = Ticket.objects.filter(assigned_to__user=user, project__in=project).values_list('priority_id',flat=True)
             type_id = Ticket.objects.filter(assigned_to__user=user, project__in=project).values_list('type_id', flat=True)
@@ -74,7 +74,7 @@ class DashboardChartView(LoginRequiredMixin, generic.ListView):
             context["count_types"] = Ticket.objects.filter(assigned_to__user=user, type_id__isnull=False, project__in=project).values('type_id').annotate(total=Count('type_id'))
             return context
         else:
-            project = Project.objects.filter(archive=False)
+            project = Project.objects.filter(archive=False, organisation=user.member.organisation)
             status_id = Ticket.objects.filter(author=user, project__in=project).values_list('status_id', flat=True)
             priority_id = Ticket.objects.filter(author=user, project__in=project).values_list('priority_id', flat=True)
             type_id = Ticket.objects.filter(author=user, project__in=project).values_list('type_id', flat=True)
@@ -711,12 +711,11 @@ def project_tickets_csv(request, pk):
     if user.is_organizer or pk in project_id:
         response = HttpResponse(content_type='text/csv')
         if user.is_organizer:
-            project = Project.objects.filter(organisation=user.account, id=pk).values_list('title', flat=True)[0]
+            project = Project.objects.filter(organisation=user.account, id=pk)
         else:
-            project = Project.objects.filter(organisation=user.member.organisation, id=pk).values_list('title', flat=True)[0]
+            project = Project.objects.filter(organisation=user.member.organisation, id=pk)
         response['Content-Disposition'] = f'attachment; filename={project}.csv'
         writer = csv.writer(response)
-        project = Project.objects.filter(organisation=user.account, id=pk)
         tickets = Ticket.objects.filter(project__in=project)
         writer.writerow(['Ticket Title', 'Assigned To', 'Status', 'Priority', 'Type', 'Created Date', 'Due To', 'Author', 'Tester'])
         for ticket in tickets:

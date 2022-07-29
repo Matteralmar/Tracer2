@@ -31,9 +31,11 @@
                     <div class="col-6">
                         <div id="div_id_ticket_flow" class="col-6 mb-3">
                             <label for="id_ticket_flow" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-400">Ticket flow</label>
-                            <select multiple name="ticket_flow" id="id_ticket_flow" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5">
+                            <select class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5"
+                                    id="id_ticket_flow" multiple
+                                    name="ticket_flow">
                                 {% for project in form.ticket_flow %}
-                                    <span>{{ project }}</span>
+                                    {{ project }}
                                 {% endfor %}
                             </select>
                         </div>

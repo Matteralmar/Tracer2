@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% load tailwind_filters %}
 
+{% block scripts %}
+    <script>
+    $(document).ready(function () {
+    $('#id_assigned_to').change(function () {
+        if (!('span_project_id'.attr('value') in $('option:selected', This).attr('value'))) {
+            $('#id_project option').hide();
+        }
+        });
+    });
+    </script>
+{% endblock scripts %}
+
 {% block content %}
 
 <section class="text-gray-600 body-font overflow-hidden">
@@ -22,7 +34,43 @@
         </div>
           <form method="post">
             {% csrf_token %}
-            {{ form|crispy }}
+              {{ form.title|as_crispy_field }}
+              <div id="div_id_assigned_to" class="mb-3">
+                  <label for="id_assigned_to" class="block text-gray-700 text-sm font-bold mb-2">
+                        Assigned to
+                  </label>
+                  <div class="mb-3">
+                      <div class="relative">
+                        <select id="id_assigned_to" class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" name="assigned_to" >
+                            {% for user in form.assigned_to %}
+                                    {{ user }}
+                                {% endfor %}
+                        </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"></path></svg>
+                            </div>
+                      </div>
+                  </div>
+              </div>
+              <div id="div_id_project" class="mb-3">
+                  <label for="id_project" class="block text-gray-700 text-sm font-bold mb-2">
+                        Project<span class="asteriskField">*</span>
+                  </label>
+                  <div class="mb-3">
+                      <div class="relative">
+                        <select id="id_project" class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" name="project" >
+                            {% for project in form.project %}
+                                <span id="span_project_id">{{ project }}</span>
+                                {% endfor %}
+                        </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"></path></svg>
+                            </div>
+                      </div>
+                  </div>
+              </div>
+              {{ form.due_to|as_crispy_field }}
+              {{ form.description|as_crispy_field }}
             <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
           </form>
         <div class="mt-5 py-5 border-t border-gray-200">

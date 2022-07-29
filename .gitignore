@@ -129,6 +129,5 @@ dmypy.json
 .pyre/
 .idea
 media_root/
-static/
 static_root/
 staticfiles-cdn/

@@ -42,14 +42,14 @@
                             <label for="id_ticket_flow" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-400">Ticket flow</label>
                             <select multiple name="ticket_flow" id="id_ticket_flow" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5">
                                 {% for project in form.ticket_flow %}
-                                    <span>{{ project }}</span>
+                                    {{ project }}
                                 {% endfor %}
                             </select>
                         </div>
                     </div>
                   {% endif %}
               </div>
-              
+
               <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
           </form>
         {% if request.user.is_organizer %}
