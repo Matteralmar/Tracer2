@@ -18,7 +18,7 @@ def notification_delete(request, pk):
     user = request.user
     if not user.is_authenticated:
         return redirect('/login/')
-    notification = Notification.objects.get(id=pk)
+    notification = Notification.objects.get(id=pk, recipient=user)
     notification.delete()
     return redirect('/notifications/')
 

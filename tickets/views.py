@@ -77,18 +77,21 @@ class TicketListView(NotManagerAndLoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         user = self.request.user
         if user.is_organizer:
-            queryset = Ticket.objects.filter(organisation=user.account, assigned_to__isnull=False)
+            project = Project.objects.filter(organisation=user.account, archive=False)
+            queryset = Ticket.objects.filter(organisation=user.account, assigned_to__isnull=False, project__in=project)
         elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, assigned_to__isnull=False)
+            project = Project.objects.filter(organisation=user.member.organisation, archive=False)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, assigned_to__isnull=False, project__in=project)
             queryset = queryset.filter(assigned_to__user=user)
         else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user)
+            project = Project.objects.filter(organisation=user.member.organisation, archive=False)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
         return queryset
 
     def get_context_data(self, **kwargs):
         user = self.request.user
         context = super(TicketListView, self).get_context_data(**kwargs)
-        project = Project.objects.filter(organisation=user.account, archive=False)
+        project = Project.objects.filter(archive=False)
         queryset = Ticket.objects.filter(organisation=user.account, assigned_to__isnull=True, project__in=project)
         context.update({
             "unassigned_tickets": queryset
@@ -346,7 +349,7 @@ class AssignMemberView(OrganizerAndLoginRequiredMixin, generic.FormView):
         user = self.request.user
         project = Project.objects.filter(organisation=user.account, archive=False).values_list('id', flat=True)
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
-        if ticket.project in project:
+        if not ticket.project.id in project:
             raise Http404
         kwargs.update({
             "request": self.request
