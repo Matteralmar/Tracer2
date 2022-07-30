@@ -1,6 +1,88 @@
 {% extends "base.html" %}
 {% load tailwind_filters %}
 
+{% block scripts %}
+    <script>
+        {% if request.user.role != 'developer' %}
+        $(document).ready(function () {
+            var chk = 0
+            $('#id_assigned_to').on('change', function (e) {
+                if (chk === 1 || chk === 0) {
+                    e.preventDefault();
+                    var data_for_backend = {};
+                    data_for_backend.csrfmiddlewaretoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
+                    data_for_backend.filter = $('option:selected', '#id_assigned_to').val();
+                    data_for_backend.name = 'assigned_to'
+                    var url = "{% url 'tickets:ticket-filter' %}"
+                    if (data_for_backend.filter === '') {
+                        chk = 0
+                    }
+                    else {
+                        chk = 1
+                    }
+                    $.post(url, data_for_backend, function (response) {
+                        var project = $('#id_project')
+                        project.empty()
+                        var newProjectList = response.projects
+                        console.log(chk)
+                        if (response.projects.length === 0) {
+                            project.append('<option value selected>---------</option>')
+                        }else if (data_for_backend.filter === '') {
+                            project.append('<option value selected>---------</option>')
+                            newProjectList.forEach(p => {
+                            project.append('<option value=' + p.id + '>' + p.title + '</option>')
+                            })
+                        } else {
+                            newProjectList.forEach(p => {
+                            project.append('<option value=' + p.id + '>' + p.title + '</option>')
+                        })
+                       }
+
+                    })
+                }
+
+            })
+            $('#id_project').on('change', function (e) {
+                console.log(chk)
+                if (chk === 2 || chk ===0) {
+                    e.preventDefault();
+                    var data_for_backend = {};
+                    data_for_backend.csrfmiddlewaretoken = document.getElementsByName('csrfmiddlewaretoken')[0].value
+                    data_for_backend.filter = $('option:selected', '#id_project').val();
+                    data_for_backend.name = 'project'
+                    var url = "{% url 'tickets:ticket-filter' %}"
+                    if (data_for_backend.filter === '') {
+                        chk = 0
+                    }
+                    else {
+                        chk = 2
+                    }
+                    $.post(url, data_for_backend, function (response) {
+                        var assigned_to = $('#id_assigned_to')
+                        assigned_to.empty()
+                        var newUsersList = response.users
+                        console.log(response.users)
+                        if (response.users.length === 0) {
+                            assigned_to.append('<option value selected>---------</option>')
+                        }else if (data_for_backend.filter === '') {
+                            assigned_to.append('<option value selected>---------</option>')
+                            newUsersList.forEach(p => {
+                            assigned_to.append('<option value=' + p.member + '>' + p.username + '</option>')
+                            })
+                        } else {
+                            newUsersList.forEach(p => {
+                            assigned_to.append('<option value=' + p.member + '>' + p.username + '</option>')
+                        })
+                       }
+
+                    })
+               }
+            })
+        });
+        {% endif %}
+    </script>
+{% endblock scripts %}
+
 {% block content %}
 <div class="max-w-lg mx-auto">
     <a class="hover:text-blue-500" href="{% url 'tickets:ticket-list' %}">Go back to tickets</a>
@@ -10,7 +92,43 @@
     </div>
     <form method="post" class="mt-5">
         {% csrf_token %}
-        {{ form|crispy }}
+        {{ form.title|as_crispy_field }}
+              <div id="div_id_assigned_to" class="mb-3">
+                  <label for="id_assigned_to" class="block text-gray-700 text-sm font-bold mb-2">
+                        Assigned to
+                  </label>
+                  <div class="mb-3">
+                      <div class="relative">
+                        <select id="id_assigned_to" class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" name="assigned_to" >
+                            {% for user in form.assigned_to %}
+                                    {{ user }}
+                                {% endfor %}
+                        </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"></path></svg>
+                            </div>
+                      </div>
+                  </div>
+              </div>
+              <div id="div_id_project" class="mb-3">
+                  <label for="id_project" class="block text-gray-700 text-sm font-bold mb-2">
+                        Project<span class="asteriskField">*</span>
+                  </label>
+                  <div class="mb-3">
+                      <div class="relative">
+                        <select id="id_project" class="bg-white focus:outline-none border border-gray-300 rounded-lg py-2 px-4 block w-full appearance-none leading-normal text-gray-700" name="project" >
+                            {% for project in form.project %}
+                                {{ project }}
+                                {% endfor %}
+                        </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"></path></svg>
+                            </div>
+                      </div>
+                  </div>
+              </div>
+              {{ form.due_to|as_crispy_field }}
+              {{ form.description|as_crispy_field }}
         <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
             Submit
         </button>

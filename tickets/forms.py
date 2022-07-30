@@ -25,11 +25,12 @@ class TicketModelForm(forms.ModelForm):
             members = Member.objects.filter(user_id__in=developer_id, organisation=user.account)
             projects = Project.objects.filter(organisation=user.account, archive=archived)
         elif user.role == 'tester':
-            members = Member.objects.filter(user_id__in=developer_id, organisation=user.member.organisation)
             results = User.objects.filter(id=user.id)
             for usr in results:
                 proj = list(usr.ticket_flow.all())
             projects = Project.objects.filter(title__in=proj)
+            user_id = User.objects.filter(ticket_flow__in=projects, role='developer').values_list('id', flat=True)
+            members = Member.objects.filter(user_id__in=user_id, organisation=user.member.organisation)
         else:
             members = Member.objects.filter(user=user, organisation=user.member.organisation)
             #projects = Project.objects.filter(organisation=user.member.organisation, title=user.ticket_flow, archive=archived)
@@ -56,8 +57,11 @@ class AssignMemberForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         request = kwargs.pop("request")
+        id = kwargs.pop("id")
         user = request.user
-        developer_id = User.objects.filter(role='developer').values_list('id')
+        project_id = Ticket.objects.filter(id=id).values_list('project_id', flat=True)[0]
+        project = Project.objects.filter(id=project_id)
+        developer_id = User.objects.filter(role='developer', ticket_flow__in=project).values_list('id')
         members = Member.objects.filter(user_id__in=developer_id, organisation=user.account)
         super(AssignMemberForm, self).__init__(*args, **kwargs)
         self.fields["member"].queryset = members
