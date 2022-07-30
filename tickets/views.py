@@ -352,7 +352,8 @@ class AssignMemberView(OrganizerAndLoginRequiredMixin, generic.FormView):
         if not ticket.project.id in project:
             raise Http404
         kwargs.update({
-            "request": self.request
+            "request": self.request,
+            "id": ticket.id,
         })
         return kwargs
 
@@ -831,4 +832,66 @@ class TicketJsonView(OrganizerAndLoginRequiredMixin,generic.View):
             "qs": qs,
         })
 
-
+def filter_(request):
+    ctx = {}
+    filtr = request.POST.get("filter")
+    name = request.POST.get("name")
+    if name == 'assigned_to':
+        if request.user.is_organizer:
+            qs = Project.objects.filter(organisation=request.user.account)
+        else:
+            qs = Project.objects.filter(organisation=request.user.member.organisation)
+        if filtr == '' and request.user.is_organizer:
+            ctx["projects"] = list(qs.values())
+            return JsonResponse(ctx)
+        if filtr == '' and request.user.is_member:
+            results = User.objects.filter(id=request.user.id)
+            for usr in results:
+                proj = list(usr.ticket_flow.all())
+            qs = qs.filter(title__in=proj, archive=False)
+            ctx["projects"] = list(qs.values())
+            return JsonResponse(ctx)
+        dev = int(Member.objects.filter(id=filtr).values_list('user_id', flat=True)[0])
+        if request.user.is_organizer:
+            results = User.objects.filter(id=dev)
+            for usr in results:
+                proj = list(usr.ticket_flow.all())
+            qs = qs.filter(title__in=proj, archive=False)
+        if request.user.role == 'tester':
+            results = User.objects.filter(id=dev)
+            for usr in results:
+                proj_1 = list(usr.ticket_flow.all())
+            results = User.objects.filter(id=request.user.id)
+            for usr in results:
+                proj_2 = list(usr.ticket_flow.all())
+            qs = qs.filter(title__in=proj_1, archive=False) & Project.objects.filter(title__in=proj_2,archive=False)
+        ctx["projects"] = list(qs.values())
+    if name == 'project':
+        if request.user.is_organizer:
+            user_id = Member.objects.filter(organisation=request.user.account).values_list('user_id', flat=True)
+        else:
+            user_id = Member.objects.filter(organisation=request.user.member.organisation).values_list('user_id', flat=True)
+        if filtr == '' and request.user.is_organizer:
+            qs = User.objects.filter(id__in=user_id, role='developer')
+            qs = qs.select_related('member').values('member', 'username')
+            ctx["users"] = list(qs)
+            return JsonResponse(ctx)
+        if filtr == '' and request.user.is_member:
+            results = User.objects.filter(id=request.user.id)
+            for usr in results:
+                proj = list(usr.ticket_flow.all())
+            project = Project.objects.filter(title__in=proj, archive=False)
+            qs = User.objects.filter(id__in=user_id, role='developer', ticket_flow__in=project).distinct()
+            qs = qs.select_related('member').values('member', 'username')
+            ctx["users"] = list(qs)
+            return JsonResponse(ctx)
+        project = Project.objects.get(id=filtr)
+        if request.user.is_organizer:
+            qs = User.objects.filter(id__in=user_id, role='developer', ticket_flow=project).distinct()
+            qs = qs.select_related('member').values('member', 'username')
+            ctx["users"] = list(qs)
+        if request.user.role == 'tester':
+            qs = User.objects.filter(id__in=user_id, role='developer', ticket_flow=project).distinct()
+            qs = qs.select_related('member').values('member', 'username')
+            ctx["users"] = list(qs)
+    return JsonResponse(ctx)
