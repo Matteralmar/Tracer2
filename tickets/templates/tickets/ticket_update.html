@@ -64,16 +64,12 @@
                         console.log(response.users)
                         if (response.users.length === 0) {
                             assigned_to.append('<option value selected>---------</option>')
-                        }else if (data_for_backend.filter === '') {
+                        }else {
                             assigned_to.append('<option value selected>---------</option>')
                             newUsersList.forEach(p => {
                             assigned_to.append('<option value=' + p.member + '>' + p.username + '</option>')
                             })
-                        } else {
-                            newUsersList.forEach(p => {
-                            assigned_to.append('<option value=' + p.member + '>' + p.username + '</option>')
-                        })
-                       }
+                        }
 
                     })
                }
