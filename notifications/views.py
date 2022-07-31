@@ -11,7 +11,7 @@ class NotificationListView(LoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Notification.objects.filter(recipient=user)
+        queryset = Notification.objects.filter(recipient=user).order_by('-created_date')
         return queryset
 
 def notification_delete(request, pk):
