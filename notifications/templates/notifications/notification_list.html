@@ -44,8 +44,10 @@
         </div>
       </div>
 
-    <hr/>
     {% for notification in notifications %}
+        <hr/>
+        <p class="text-center italic">{{ notification.created_date }}</p>
+        <hr/>
         <div id="new" class="text-white px-6 py-4 border-0 rounded relative mb-4 mt-5 bg-cyan-500">
             <span class="text-xl inline-block mr-5 align-middle">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" fill="white" viewBox="0 0 24 24" stroke="currentColor">
