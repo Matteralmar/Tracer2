@@ -12,11 +12,12 @@ class User(AbstractUser):
         ('project_manager', 'Project Manager'),
     ]
     username = models.CharField(max_length=30, unique=True)
-    email = models.CharField(max_length=90, unique=True)
+    email = models.EmailField(max_length=90, unique=True)
     is_organizer = models.BooleanField(default=True)
     is_member = models.BooleanField(default=False)
     role = models.TextField(choices=ROLE_CHOICES)
     ticket_flow = models.ManyToManyField('Project', blank=True)
+    email_confirmed = models.BooleanField(default=False)
 
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

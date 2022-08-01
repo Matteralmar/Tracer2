@@ -17,7 +17,7 @@ class OrganizerAndLoginRequiredMixin(AccessMixin):
 class NotManagerAndLoginRequiredMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or request.user.role == 'project_manager':
-            return redirect("tickets:ticket-list")
+            return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
 class ManagerAndLoginRequiredMixin(AccessMixin):
@@ -32,12 +32,18 @@ class TesterAndLoginRequiredMixin(AccessMixin):
             return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
+class DeveloperAndLoginRequiredMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated or not request.user.role == 'developer':
+            return redirect("dashboard:dashboard-chart")
+        return super().dispatch(request, *args, **kwargs)
+
 class CommentAndLoginRequiredMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         user = self.request.user.id
         author = Comment.objects.filter(id=self.kwargs["pk"]).values_list('author', flat=True)
         if not request.user.is_authenticated or request.user.role == 'project_manager' or not user in author:
-            return redirect("tickets:ticket-list")
+            return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
 
