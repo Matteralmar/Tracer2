@@ -4,42 +4,22 @@ from django.http.response import JsonResponse
 from django.shortcuts import render, redirect, reverse
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponse, Http404
-from django.views import generic
+from django.views import generic, View
 from .models import *
 from .forms import *
 from administration.mixins import *
 from django.db.models import Count, Q
 
+from .tokens import account_activation_token
+from django.contrib import messages
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from django.template.loader import render_to_string
 
-#class ProjectAutocomplete(LoginRequiredMixin, autocomplete.Select2QuerySetView):
-#    def get_queryset(self):
-#        qs = Project.objects.all()
-#        assigned_to = self.forwarded.get('assigned_to', None)
-#        print(assigned_to)
-#        if self.request.user.is_organizer:
-#            results = User.objects.filter(id=assigned_to)
-#            for usr in results:
-#                proj = list(usr.ticket_flow.all())
-#            qs = qs.filter(title__in=proj, archive=False)
-#        if self.request.user.role == 'project_manager':
-#            results = User.objects.filter(id=assigned_to)
-#            for usr in results:
-#                proj = list(usr.ticket_flow.all())
-#            qs = qs.filter(project_manager__user=user, archive=False) & Project.objects.filter(title__in=proj, archive=False)
-#        if self.request.user.role == 'tester':
-#            results = User.objects.filter(id=assigned_to)
-#            for usr in results:
-#                proj_1 = list(usr.ticket_flow.all())
-#            results = User.objects.filter(id=self.request.user.id)
-#            for usr in results:
-#                proj_2 = list(usr.ticket_flow.all())
-#            qs = qs.filter(title__in=proj_1, archive=False) & Project.objects.filter(title__in=proj_2,archive=False)
-#        if self.request.user.role == 'developer':
-#            results = User.objects.filter(id=assigned_to)
-#            for usr in results:
-#                proj = list(usr.ticket_flow.all())
-#            qs = qs.filter(title__in=proj, archive=False)
-#        return qs
+from django.contrib.auth import login
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 
 
 class SignupView(generic.CreateView):
@@ -48,6 +28,7 @@ class SignupView(generic.CreateView):
 
     def form_valid(self, form):
         user = form.save(commit=False)
+        user.is_active = False
         user.save()
         username = form.cleaned_data['username']
         user = User.objects.get(username=username)
@@ -56,11 +37,39 @@ class SignupView(generic.CreateView):
             text=f'Hello {username}, hope you will enjoy your work using our app!',
             recipient=user
         )
+        current_site = get_current_site(self.request)
+        subject = 'Activate your Tracer account'
+        message = render_to_string('registration/email_activation.html', {
+            'user': user,
+            'domain': current_site.domain,
+            'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+            'token': account_activation_token.make_token(user),
+        })
+        user.email_user(subject, message)
+
+        messages.info(self.request, ('Please confirm your email to complete registration.'))
+
         return super(SignupView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse("login")
 
+class ActivateAccount(View):
+    def get(self, request, uidb64, token, *args, **kwargs):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        if user is not None and account_activation_token.check_token(user, token):
+            user.is_active = True
+            user.email_confirmed = True
+            user.save()
+            login(request, user)
+            return redirect('dashboard:dashboard-chart')
+        else:
+            messages.warning(request, ('The confirmation link was invalid, possibly because it has already been used.'))
+            return redirect('login')
 
 class LandingPageView(generic.TemplateView):
     template_name = "landing.html"
@@ -206,6 +215,15 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
     def get_success_url(self):
         return reverse("tickets:ticket-detail", kwargs={"pk": self.kwargs["pk"]})
 
+    def get_context_data(self, **kwargs):
+        user = self.request.user
+        context = super(TicketUpdateView, self).get_context_data(**kwargs)
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        print(user ,ticket.author)
+        context["ticket"] = ticket
+        return context
+
+
     def form_valid(self, form):
         user = self.request.user
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
@@ -308,7 +326,7 @@ class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
-            queryset = queryset.filter(assigned_to__user=user)
+            queryset = queryset.filter(assigned_to__user=user, author=user)
         else:
             queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
         return queryset
@@ -339,6 +357,21 @@ class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
     def get_success_url(self):
         return reverse("tickets:ticket-list")
 
+class TicketRequestDeleteView(DeveloperAndLoginRequiredMixin, generic.TemplateView):
+    template_name = "tickets/ticket_request_delete.html"
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        member = Member.objects.get(user_id=user.id)
+        project = Project.objects.filter(organisation=user.member.organisation, archive=False)
+        ticket = Ticket.objects.get(project__in=project, pk=self.kwargs["pk"], assigned_to=member)
+        user = User.objects.get(tickets=ticket)
+        Notification.objects.create(
+            title=f'Deletion Request',
+            text=f'{self.request.user.username} requested to delete "{ticket.title}" ticket.',
+            recipient=user
+        )
+        return redirect("tickets:ticket-list")
 
 class AssignMemberView(OrganizerAndLoginRequiredMixin, generic.FormView):
     template_name = "tickets/assign_member.html"

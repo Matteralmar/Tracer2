@@ -19,9 +19,12 @@ class MemberListView(ManagerOrganizerAndLoginRequiredMixin, generic.ListView):
         user = self.request.user
         if user.is_organizer:
             id = Member.objects.filter(organisation=user.account).values_list('user_id', flat=True)
+            user = User.objects.filter(pk__in=id)
         else:
             id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id', flat=True)
-        return User.objects.filter(pk__in=id)
+            queryset = Project.objects.filter(project_manager__user=user, archive=False)
+            user = User.objects.filter(pk__in=id, ticket_flow__in=queryset).distinct()
+        return user
 
 
 class MemberCreateView(ManagerOrganizerAndLoginRequiredMixin, generic.CreateView):
@@ -89,7 +92,8 @@ class MemberDetailView(ManagerOrganizerAndLoginRequiredMixin, generic.DetailView
             user = User.objects.filter(pk__in=user_id)
         else:
             user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id', flat=True).distinct()
-            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id)
+            queryset = Project.objects.filter(project_manager__user=user, archive=False)
+            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id, ticket_flow__in=queryset).distinct()
         return user
 
 class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView):
@@ -108,17 +112,31 @@ class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView
         user = form.save(commit=False)
         user_c = User.objects.get(pk=self.kwargs["pk"])
         role = form.cleaned_data['role']
+        ticket_flow = form.cleaned_data['ticket_flow']
+        results = User.objects.filter(pk=self.kwargs["pk"])
+        for usr in results:
+            proj = usr.ticket_flow.all()
         if role != user_c.role:
             user = User.objects.get(username=user_c.username)
             if user_c.role == 'developer':
-                member = Member.objects.filter(user_id=user.id)
-                tickets = Ticket.objects.filter(assigned_to__in=member).update(assigned_to=None)
+                member = Member.objects.get(user_id=user.id)
+                tickets = Ticket.objects.filter(assigned_to=member).update(assigned_to=None, author=self.request.user)
             Notification.objects.create(
                 title=f'Role change',
                 text=f'Your role was changed to "{user.get_role_display()}" by {self.request.user.username}',
                 recipient=user
             )
             user.save()
+        if list(ticket_flow) != list(proj):
+            Notification.objects.create(
+                title=f'Ticket flow change',
+                text=f'Your ticket flow was altered by {self.request.user.username}',
+                recipient=user_c
+            )
+            qs_difference = proj.difference(ticket_flow).values_list('id', flat=True)
+            member = Member.objects.get(user_id=user_c.id)
+            ticket = Ticket.objects.filter(assigned_to=member, project_id__in=qs_difference).update(assigned_to=None, author=self.request.user)
+
         if self.request.user.role == 'project_manager':
             user = User.objects.get(username=self.request.user.member.organisation)
             Notification.objects.create(
@@ -136,7 +154,8 @@ class MemberUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateView
             user = User.objects.filter(pk__in=user_id)
         else:
             user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id', flat=True).distinct()
-            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id)
+            queryset = Project.objects.filter(project_manager__user=user, archive=False)
+            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id, ticket_flow__in=queryset).distinct()
         return user
 
     def get_success_url(self):
@@ -157,7 +176,8 @@ class MemberDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
             user = User.objects.filter(pk__in=user_id)
         else:
             user_id = Member.objects.filter(organisation=user.member.organisation).values_list('user_id', flat=True).distinct()
-            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id)
+            queryset = Project.objects.filter(project_manager__user=user, archive=False)
+            user = User.objects.filter(~Q(role='project_manager'), pk__in=user_id, ticket_flow__in=queryset).distinct()
         return user
 
 

@@ -18,7 +18,7 @@ from django.conf.urls.static import static
 from django.contrib.auth.views import LoginView, LogoutView, PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, PasswordResetCompleteView
 from django.contrib import admin
 from django.urls import path, include
-from tickets.views import LandingPageView, SignupView
+from tickets.views import LandingPageView, SignupView , ActivateAccount
 from administration.decorators import already_logged
 
 urlpatterns = [
@@ -32,6 +32,7 @@ urlpatterns = [
     path('notifications/', include('notifications.urls', namespace="notifications")),
     path('login/', LoginView.as_view(redirect_authenticated_user=True), name='login'),
     path('signup/', already_logged(SignupView.as_view()), name='signup'),
+    path('activation/<uidb64>/<token>/', already_logged(ActivateAccount.as_view()), name='activate'),
     path('reset-password/', already_logged(PasswordResetView.as_view()), name='reset-password'),
     path('password-reset-done/', already_logged(PasswordResetDoneView.as_view()), name='password_reset_done'),
     path('password-reset-confirm/<uidb64>/<token>/', already_logged(PasswordResetConfirmView.as_view()), name='password_reset_confirm'),
