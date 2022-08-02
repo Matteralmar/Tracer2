@@ -29,5 +29,3 @@ class MemberModelForm(forms.ModelForm):
                 ('developer', 'Developer'),
             )
         self.fields["ticket_flow"].queryset = projects
-        if len(projects) == 0:
-            del self.fields["ticket_flow"]

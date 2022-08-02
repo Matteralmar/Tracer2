@@ -570,51 +570,20 @@ class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
 
     def form_valid(self, form):
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
-        assigned_to = form.cleaned_data['assigned_to']
         titl = form.cleaned_data['title']
         if ticket.title != titl:
-            if ticket.assigned_to is not None and assigned_to == ticket.assigned_to:
+            if ticket.assigned_to is not None:
                 user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Ticket name change',
                     text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}/{self.request.user.get_role_display()}',
                     recipient=user
                 )
-        if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
+        if ticket.assigned_to is not None:
             user = User.objects.get(username=ticket.assigned_to)
             Notification.objects.create(
                 title=f'Ticket update',
                 text=f'Your "{titl}" ticket details was updated by {self.request.user.username}/{self.request.user.get_role_display()}',
-                recipient=user
-            )
-            return super(TestTicketUpdateView, self).form_valid(form)
-        if (assigned_to and ticket.assigned_to is not None) and (assigned_to != ticket.assigned_to):
-            user = User.objects.get(username=assigned_to)
-            Notification.objects.create(
-                title=f'New ticket',
-                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}/{self.request.user.get_role_display()}',
-                recipient=user
-            )
-            user = User.objects.get(username=ticket.assigned_to)
-            Notification.objects.create(
-                title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
-                recipient=user
-            )
-            return super(TestTicketUpdateView, self).form_valid(form)
-        if ticket.assigned_to is None and assigned_to is not None:
-            user = User.objects.get(username=assigned_to)
-            Notification.objects.create(
-                title=f'New ticket',
-                text=f'"{titl}" ticket was assigned to you by {self.request.user.username}/{self.request.user.get_role_display()}',
-                recipient=user
-            )
-            return super(TestTicketUpdateView, self).form_valid(form)
-        if ticket.assigned_to is not None and assigned_to is None:
-            user = User.objects.get(username=ticket.assigned_to)
-            Notification.objects.create(
-                title=f'Unassigned ticket',
-                text=f'"{titl}" ticket was unassigned from you by {self.request.user.username}/{self.request.user.get_role_display()}',
                 recipient=user
             )
             return super(TestTicketUpdateView, self).form_valid(form)
@@ -711,12 +680,12 @@ def project_tickets_csv(request, pk):
     if user.is_organizer or pk in project_id:
         response = HttpResponse(content_type='text/csv')
         if user.is_organizer:
-            project = Project.objects.filter(organisation=user.account, id=pk)
+            project = Project.objects.get(organisation=user.account, id=pk)
         else:
-            project = Project.objects.filter(organisation=user.member.organisation, id=pk)
+            project = Project.objects.get(organisation=user.member.organisation, id=pk)
         response['Content-Disposition'] = f'attachment; filename={project}.csv'
         writer = csv.writer(response)
-        tickets = Ticket.objects.filter(project__in=project)
+        tickets = Ticket.objects.filter(project=project)
         writer.writerow(['Ticket Title', 'Assigned To', 'Status', 'Priority', 'Type', 'Created Date', 'Due To', 'Author', 'Tester'])
         for ticket in tickets:
             writer.writerow([ticket.title, ticket.assigned_to, ticket.status, ticket.priority, ticket.type, ticket.created_date, ticket.due_to, ticket.author, ticket.tester])
