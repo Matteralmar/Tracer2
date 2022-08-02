@@ -58,7 +58,6 @@ class TicketModelForm(forms.ModelForm):
             'title',
             'due_to',
             'description',
-            'assigned_to',
             'status',
             'tester',
         )
@@ -69,19 +68,9 @@ class TicketModelForm(forms.ModelForm):
         statuses = Status.objects.filter(organisation=user.member.organisation)
         tester = User.objects.filter(username=user.username)
         super(TicketModelForm, self).__init__(*args, **kwargs)
-        results = User.objects.filter(id=request.user.id)
-
-        for usr in results:
-            proj = list(usr.ticket_flow.all())
-
-        project = Project.objects.filter(title__in=proj, archive=False)
-        qs = User.objects.filter(role='developer', ticket_flow__in=project).values_list('id', flat=True)
-        member = Member.objects.filter(user_id__in=qs, organisation=user.member.organisation)
-        super(TicketModelForm, self).__init__(*args, **kwargs)
         self.fields["due_to"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
         self.fields["status"].queryset = statuses
         self.fields["tester"].queryset = tester
-        self.fields["assigned_to"].queryset = member
 
 class CommentModelForm(forms.ModelForm):
     class Meta:

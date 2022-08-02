@@ -2,6 +2,26 @@
 {% load tailwind_filters %}
 {% load crispy_forms_tags %}
 
+{% block scripts %}
+    <script>
+        $(document).ready(function () {
+            var value = $('option:selected', '#role').val()
+            if (value === 'project_manager'){
+                    $('#ticket_flow').hide();
+                }
+            $('#role').on('change', function (e) {
+                e.preventDefault();
+                var value = $('option:selected', '#role').val()
+                if (value === 'project_manager'){
+                    $('#ticket_flow').fadeOut();
+                } else{
+                    $('#ticket_flow').fadeIn();
+                }
+            });
+        });
+    </script>
+{% endblock scripts %}
+
 {% block content %}
 
 <section class="text-gray-600 body-font overflow-hidden">
@@ -33,11 +53,11 @@
                   <div class="col-6">
                     {{ form.email|as_crispy_field }}
                   </div>
-                  <div class="col-6">
+                  <div class="col-6" id="role">
                     {{ form.role|as_crispy_field }}
                   </div>
                   {% if form.ticket_flow %}
-                    <div class="col-6">
+                    <div class="col-6" id="ticket_flow">
                         <div id="div_id_ticket_flow" class="col-6 mb-3">
                             <label for="id_ticket_flow" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-400">Ticket flow</label>
                             <select multiple name="ticket_flow" id="id_ticket_flow" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 block w-full p-2.5">
