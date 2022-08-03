@@ -4,7 +4,7 @@
 {% block content %}
 
 <div class="max-w-lg mx-auto">
-    <a class="hover:text-blue-500" href="{% url 'tickets:ticket-list' %}">Go back to tickets</a>
+    <a class="hover:text-blue-500" href="{% url 'dashboard:project-management' request.session.project_id %}">Go back to project management</a>
     <hr/>
     <div class="py-5 border-5 border-gray-200">
         <h1 class="text-4xl test-gray-800">Assign a member to this ticket</h1>

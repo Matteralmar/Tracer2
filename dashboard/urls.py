@@ -6,6 +6,7 @@ app_name = "dashboard"
 urlpatterns = [
     path('', DashboardChartView.as_view(), name='dashboard-chart'),
     path('project/management/<int:pk>/', ProjectManagementView.as_view(), name='project-management'),
+    path('project/management/<int:pk>/assign-member', AssignMemberView.as_view(), name='assign-member'),
     path('project/management/<int:pk>/detail', ManagementTicketDetailView.as_view(), name='management-ticket-detail'),
     path('project/management/create/', ManagementTicketCreateView.as_view(), name='management-ticket-create'),
     path('project/management/<int:pk>/update', ManagementTicketUpdateView.as_view(), name='management-ticket-update'),

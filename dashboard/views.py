@@ -282,23 +282,24 @@ class ProjectManagementView(ManagerAndLoginRequiredMixin, generic.ListView):
         project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation, id=id, archive=False).values_list('id', flat=True)
         if len(project) == 0:
             raise Http404
-        queryset = Ticket.objects.filter(project__in=project)
+        queryset = Ticket.objects.filter(project__in=project, assigned_to__isnull=False)
         return queryset
 
     def get_context_data(self, **kwargs):
         user = self.request.user
         context = super(ProjectManagementView, self).get_context_data(**kwargs)
         id = self.request.path.split('/')[4]
-        project = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation, id=id, archive=False).values_list('id', flat=True)
+        project = Project.objects.get(project_manager__user=user, organisation=user.member.organisation, id=id, archive=False)
         self.request.session['project_id'] = id
 
-        status_id = Ticket.objects.filter(project__in=project).values_list('status_id', flat=True)
-        priority_id = Ticket.objects.filter(project__in=project).values_list('priority_id', flat=True)
-        type_id = Ticket.objects.filter(project__in=project).values_list('type_id', flat=True)
+        status_id = Ticket.objects.filter(project=project).values_list('status_id', flat=True)
+        priority_id = Ticket.objects.filter(project=project).values_list('priority_id', flat=True)
+        type_id = Ticket.objects.filter(project=project).values_list('type_id', flat=True)
 
         status_color = Status.objects.filter(pk__in=status_id).values_list('color_code', flat=True)
         priority_color = Priority.objects.filter(pk__in=priority_id).values_list('color_code', flat=True)
         type_color = Type.objects.filter(pk__in=type_id).values_list('color_code', flat=True)
+        tickets = Ticket.objects.filter(project=project, assigned_to__isnull=True)
 
         if len(status_color) != 0:
             context["status_color_code"] = status_color[0]
@@ -306,8 +307,45 @@ class ProjectManagementView(ManagerAndLoginRequiredMixin, generic.ListView):
             context["priority_color_code"] = priority_color[0]
         if len(type_color) != 0:
             context["type_color_code"] = type_color[0]
+        context["unassigned_tickets"] = tickets
+        context["project"] = project
         return context
 
+class AssignMemberView(ManagerAndLoginRequiredMixin, generic.FormView):
+    template_name = "dashboard/assign_member.html"
+    form_class = AssignMemberForm
+
+    def get_form_kwargs(self, **kwargs):
+        kwargs = super(AssignMemberView, self).get_form_kwargs(**kwargs)
+        user = self.request.user
+        project = Project.objects.filter(id=self.request.session['project_id'], archive=False, project_manager__user=user).values_list('id', flat=True)
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
+        if not ticket.project.id in project:
+            raise Http404
+        kwargs.update({
+            "request": self.request,
+            "id": ticket.id,
+        })
+        return kwargs
+
+    def get_success_url(self):
+        id = self.request.session['project_id']
+        return reverse("dashboard:project-management", args=[id])
+
+    def form_valid(self, form):
+        user = self.request.user
+        member = form.cleaned_data["member"]
+        project = Project.objects.filter(archive=False, project_manager__user=user)
+        ticket = Ticket.objects.get(id=self.kwargs["pk"], project__in=project)
+        ticket.assigned_to = member
+        ticket.save()
+        user = User.objects.get(username=ticket.assigned_to)
+        Notification.objects.create(
+            title=f'New ticket',
+            text=f'"{ticket.title}" ticket was assigned to you by {self.request.user.username}',
+            recipient=user
+        )
+        return super(AssignMemberView, self).form_valid(form)
 
 class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateView):
     template_name = "dashboard/management_ticket_create.html"

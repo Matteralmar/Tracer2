@@ -52,19 +52,6 @@ class CustomUserCreationForm(UserCreationForm):
         )
         field_classes = {'username': UsernameField}
 
-class AssignMemberForm(forms.Form):
-    member = forms.ModelChoiceField(queryset=Member.objects.none())
-
-    def __init__(self, *args, **kwargs):
-        request = kwargs.pop("request")
-        id = kwargs.pop("id")
-        user = request.user
-        project_id = Ticket.objects.filter(id=id).values_list('project_id', flat=True)[0]
-        project = Project.objects.filter(id=project_id)
-        developer_id = User.objects.filter(role='developer', ticket_flow__in=project).values_list('id')
-        members = Member.objects.filter(user_id__in=developer_id, organisation=user.account)
-        super(AssignMemberForm, self).__init__(*args, **kwargs)
-        self.fields["member"].queryset = members
 
 class TicketSatusUpdateForm(forms.ModelForm):
     class Meta:
