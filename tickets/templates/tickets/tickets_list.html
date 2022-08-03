@@ -155,40 +155,6 @@
             </div>
             </div>
         </div>
-
-        {% if unassigned_tickets.exists %}
-            <div class="mt-5 flex flex-wrap -m-4">
-                <div class="p-4 w-full">
-                    <h1 class="text-4xl text-gray-800">Unassigned tickets</h1>
-                </div>
-                {% for ticket in unassigned_tickets %}
-                <div class="p-4 lg:w-1/2 md:w-full">
-                    <div class="flex border-2 rounded-lg border-gray-200 p-8 sm:flex-row flex-col">
-                        <div class="w-16 h-16 sm:mr-8 sm:mb-0 mb-4 inline-flex items-center justify-center rounded-full bg-indigo-100 text-indigo-500 flex-shrink-0">
-                            <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-8 h-8" viewBox="0 0 24 24">
-                                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                        </div>
-                        <div class="flex-grow overflow-hidden">
-                            <h2 class="leading-relaxed text-base">
-                                {{ ticket.title }}
-                            </h2>
-                            <p class="leading-relaxed text-base truncate">
-                                {{ ticket.project }}
-                            </p>
-                            <a href="{% url 'tickets:assign-member' ticket.pk %}" class="mt-3 text-indigo-500 inline-flex items-center">
-                                Assign member
-                                <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-4 h-4 ml-2" viewBox="0 0 24 24">
-                                    <path d="M5 12h14M12 5l7 7-7 7"></path>
-                                </svg>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-            {% endfor %}
-            </div>
-        {% endif %}
     </div>
 </section>
 {% endblock content %}
