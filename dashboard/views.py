@@ -201,7 +201,7 @@ class ProjectUpdateView(ManagerOrganizerAndLoginRequiredMixin, generic.UpdateVie
         return super(ProjectUpdateView, self).form_valid(form)
 
     def get_success_url(self):
-        return reverse("dashboard:project-detail", kwargs={"pk": self.kwargs["pk"]})
+        return reverse("dashboard:dashboard-chart")
 
 
 class ProjectDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):

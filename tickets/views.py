@@ -203,7 +203,7 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
 
 
     def get_success_url(self):
-        return reverse("tickets:ticket-detail", kwargs={"pk": self.kwargs["pk"]})
+        return reverse("tickets:ticket-list")
 
     def get_context_data(self, **kwargs):
         user = self.request.user
