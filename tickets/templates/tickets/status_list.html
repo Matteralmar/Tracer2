@@ -26,7 +26,7 @@
         {% for status in status_list %}
           <tr>
             <td class="px-4 py-3">
-              <a href="{% url 'tickets:status-detail' status.pk %}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-[{{ status.color_code }}] text-stone-50">{{ status.name }}</a>
+              <a href="{% url 'tickets:status-detail' status.pk %}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-stone-50" style="background-color:{{ status.color_code }};">{{ status.name }}</a>
             </td>
           {% if status.id in status_ids %}
             {% for status_count in status_counts %}

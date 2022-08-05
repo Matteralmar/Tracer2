@@ -26,7 +26,7 @@
         {% for priority in priority_list %}
           <tr>
             <td class="px-4 py-3">
-              <a href="{% url 'tickets:priority-detail' priority.pk %}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-[{{ priority.color_code }}] text-stone-50">{{ priority.name }}</a>
+              <a href="{% url 'tickets:priority-detail' priority.pk %}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-stone-50" style="background-color:{{ priority.color_code }};">{{ priority.name }}</a>
             </td>
               {% if priority.id in priority_ids %}
             {% for priority_count in priority_counts %}
