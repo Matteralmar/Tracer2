@@ -26,7 +26,7 @@
         {% for type in type_list %}
           <tr>
             <td class="px-4 py-3">
-              <a href="{% url 'tickets:type-detail' type.pk %}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-[{{ type.color_code }}] text-stone-50">{{ type.name }}</a>
+              <a href="{% url 'tickets:type-detail' type.pk %}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-stone-50" style="background-color:{{ type.color_code }};">{{ type.name }}</a>
             </td>
              {% if type.id in type_ids %}
             {% for type_count in type_counts %}
