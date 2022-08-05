@@ -102,7 +102,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     {% if ticket.type %}
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-[{{ ticket.type.color_code }}] text-stone-50">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-stone-50" style="background-color:{{ ticket.type.color_code }};">
                                             {{ ticket.type.name }}
                                         </span>
                                     {% else %}
@@ -113,7 +113,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     {% if ticket.priority %}
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-[{{ ticket.priority.color_code }}] text-stone-50">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full text-stone-50" style="background-color:{{ ticket.priority.color_code }};">
                                             {{ ticket.priority.name }}
                                         </span>
                                     {% else %}
