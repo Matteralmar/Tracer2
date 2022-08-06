@@ -10,7 +10,7 @@
       <p class="lg:w-2/3 mx-auto leading-relaxed text-base">
           These are tickets related to this type
       </p>
-      <a href="{% url 'tickets:type-update' type.pk %}" class="hover:text-blue-500">Update</a>
+      <a href="{% url 'tickets:type-update' type.pk %}" class="hover:text-blue-400">Update</a>
     </div>
     <div class="lg:w-2/3 w-full mx-auto overflow-auto">
       <table class="table-auto w-full text-left whitespace-no-wrap">
@@ -29,7 +29,7 @@
           <tr>
           {% if ticket in tickets %}
             <td class="px-4 py-3">
-              <a class="hover:text-blue-500" href="{% url 'tickets:ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
+              <a class="hover:text-blue-400" href="{% url 'tickets:ticket-detail' ticket.pk %}">{{ ticket.title }}</a>
             </td>
             <td class="px-4 py-3">{{ ticket.assigned_to }}</td>
           {% endif %}

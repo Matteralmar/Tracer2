@@ -34,13 +34,13 @@
               <h1 class="text-4xl text-gray-800">Project management</h1>
           </div>
           <div>
-              <a class="text-gray-500 hover:text-blue-500" href="{% url 'dashboard:management-ticket-create' %}">Create a new ticket</a>
+              <a class="text-gray-500 hover:text-blue-400" href="{% url 'dashboard:management-ticket-create' %}">Create a new ticket</a>
           </div>
       </div>
       <div class="flex w-full md:justify-start justify-center items-end">
         <div class="relative mr-4 w-4/7">
           <label for="filter" class="leading-7 text-sm text-gray-600">Filter</label>
-          <input type="text" id="filter" name="filter" class="w-full bg-gray-100 rounded border bg-opacity-50 border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:bg-transparent focus:border-indigo-500 text-base outline-none text-gray-700 px-3 leading-8 transition-colors duration-200 ease-in-out">
+          <input type="text" id="filter" name="filter" class="mb-1 w-full bg-gray-100 rounded border bg-opacity-50 border-gray-300 focus:ring-2 focus:ring-indigo-200 focus:bg-white focus:border-indigo-500 text-base outline-none text-gray-700 px-3 leading-8 transition-colors duration-200 ease-in-out">
         </div>
       </div>
       <div class="flex flex-col w-full">
@@ -127,7 +127,7 @@
 
                         {% empty %}
 
-                        <p>There are currently no tickets</p>
+                        <p class="pl-2">There are currently no tickets</p>
 
                         {% endfor %}
                     </tbody>
@@ -143,7 +143,7 @@
                 </div>
                 {% for ticket in unassigned_tickets %}
                 <div class="p-4 lg:w-1/2 md:w-full">
-                    <div class="flex border-2 rounded-lg border-gray-200 p-8 sm:flex-row flex-col">
+                    <div class="flex border-2 rounded-lg border-gray-200 p-8 sm:flex-row flex-col bg-white">
                         <div class="w-16 h-16 sm:mr-8 sm:mb-0 mb-4 inline-flex items-center justify-center rounded-full bg-indigo-100 text-indigo-500 flex-shrink-0">
                             <svg fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="w-8 h-8" viewBox="0 0 24 24">
                                 <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
