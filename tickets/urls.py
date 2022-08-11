@@ -25,10 +25,10 @@ urlpatterns = [
     path('comments/<int:pk>/', CommentCreateView.as_view(), name='ticket-comment-create'),
     path('comments/<int:pk>/delete/', CommentDeleteView.as_view(), name='ticket-comment-delete'),
     path('<int:pk>/comments/update/', CommentUpdateView.as_view(), name='ticket-comment-update'),
-    path('<int:pk>/status/', TicketCategoryUpdateView.as_view(), name='ticket-status-update'),
+    path('<int:pk>/category/', TicketCategoryUpdateView.as_view(), name='ticket-status-update'),
     path('<int:pk>/', TicketDetailView.as_view(), name='ticket-detail'),
     path('<int:pk>/update/', TicketUpdateView.as_view(), name='ticket-update'),
     path('<int:pk>/delete/', TicketDeleteView.as_view(), name='ticket-delete'),
-    path('<int:pk>/request/delete/', TicketRequestDeleteView.as_view(), name='ticket-request-delete'),
+    path('<int:pk>/request/change/', TicketRequestChangeView.as_view(), name='ticket-request-change'),
     path('filter/', filter_, name='ticket-filter'),
 ]

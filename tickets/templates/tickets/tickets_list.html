@@ -134,11 +134,16 @@
                                     {% endif %}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    {% if request.user.role != 'project_manager' %}
+                                    {% if request.user.role == 'developer' or request.user.is_organizer %}
                                      <a href="{% url 'tickets:ticket-update' ticket.pk %}" class="text-indigo-600 hover:text-indigo-900">
                                         Edit
                                     </a>
+                                    {% elif request.user.role == 'tester' %}
+                                        <a href="{% url 'tickets:ticket-request-change' ticket.pk %}" class="text-indigo-600 hover:text-indigo-900">
+                                        Alter
+                                        </a>
                                     {% endif %}
+
                                 </td>
                             </tr>
                             {% endif %}

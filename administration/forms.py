@@ -2,8 +2,6 @@ from django import forms
 from tickets.models import *
 from django.db.models import Q
 
-
-
 class MemberModelForm(forms.ModelForm):
 
     class Meta:
@@ -25,7 +23,7 @@ class MemberModelForm(forms.ModelForm):
         else:
             projects = Project.objects.filter(organisation=user.member.organisation, project_manager__user=user, archive=False)
             self.fields['role'].choices = (
-                ('tester', 'Tester'),
-                ('developer', 'Developer'),
+                ('tester', 'Inspect'),
+                ('developer', 'Comply'),
             )
         self.fields["ticket_flow"].queryset = projects

@@ -123,8 +123,11 @@
                       </div>
                   </div>
               </div>
-              {{ form.due_to|as_crispy_field }}
+              {{ form.deadline|as_crispy_field }}
               {{ form.description|as_crispy_field }}
+              {{ form.status|as_crispy_field }}
+              {{ form.priority|as_crispy_field }}
+              {{ form.type|as_crispy_field }}
         <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
             Submit
         </button>

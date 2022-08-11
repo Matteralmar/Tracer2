@@ -212,6 +212,9 @@ $(document).ready(function(){
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     {% if request.user.role == 'project_manager' %}
+                                    <a href="{% url 'dashboard:project-update' project.pk %}" class="text-indigo-600 hover:text-indigo-900">
+                                        Edit
+                                    </a> /
                                     <a class="text-indigo-600 hover:text-indigo-900" href="{% url 'dashboard:project-management' project.pk %}">
                                         Manage
                                     </a>
@@ -243,7 +246,7 @@ $(document).ready(function(){
 </section>
 <div class="container px-5 mx-auto">
     <div class="flex flex-wrap -m-4 justify-center">
-      <div class="position-relative">
+      <div>
         <canvas id="statusChart" width="400" height="400"></canvas>
     </div>
     <div>

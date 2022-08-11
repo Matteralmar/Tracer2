@@ -9,4 +9,5 @@ urlpatterns = [
     path('<int:pk>/', MemberDetailView.as_view(), name='member-detail'),
     path('<int:pk>/update/', MemberUpdateView.as_view(), name='member-update'),
     path('<int:pk>/delete/', MemberDeleteView.as_view(), name='member-delete'),
+    path('<int:pk>/request/delete/', MemberRequestDeleteView.as_view(), name='member-request-delete'),
 ]

@@ -91,15 +91,18 @@
           <a href="{% url 'tickets:ticket-detail' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
               Overview
           </a>
-          <a href="{% url 'tickets:ticket-status-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
-              Category
-          </a>
+            {% if request.user.is_organizer %}
+            <a href="{% url 'tickets:ticket-status-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
+                Category
+            </a>
+            {% endif %}
           <a href="{% url 'tickets:ticket-update' ticket.pk %}" class="flex-grow text-indigo-500 border-b-2 border-indigo-500 py-2 text-lg px-1">
               Update Details
           </a>
         </div>
           <form method="post">
             {% csrf_token %}
+          {% if request.user.is_organizer %}
               {{ form.title|as_crispy_field }}
               <div id="div_id_assigned_to" class="mb-3">
                   <label for="id_assigned_to" class="block text-gray-700 text-sm font-bold mb-2">
@@ -135,11 +138,13 @@
                       </div>
                   </div>
               </div>
-              {{ form.due_to|as_crispy_field }}
+              {{ form.deadline|as_crispy_field }}
+          {% endif %}
               {{ form.description|as_crispy_field }}
+              {% if not request.user.is_organizer %}{{ form.status|as_crispy_field }}{% endif %}
             <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
           </form>
-      {% if request.user == ticket.author or request.role != 'developer' %}
+      {% if request.user.is_organizer %}
         <div class="mt-5 py-5 border-t border-gray-200">
           <a href="{% url 'tickets:ticket-delete' ticket.pk %}" class="w-1/2 mt-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
               Delete
@@ -147,8 +152,8 @@
         </div>
           {% else %}
       <div class="mt-5 py-5 border-t border-gray-200">
-          <a href="{% url 'tickets:ticket-request-delete' ticket.pk %}" class="w-1/2 mt-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
-              Request delete
+          <a href="{% url 'tickets:ticket-request-change' ticket.pk %}" class="w-1/2 mt-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
+              Request change
             </a>
         </div>
       {% endif %}

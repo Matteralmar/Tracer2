@@ -22,6 +22,11 @@
             {{ form|crispy }}
             <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
           </form>
+          <div class="mt-5 py-5 border-t border-gray-200">
+            <a href="{% url 'dashboard:ticket-request-change' ticket.pk %}" class="w-1/2 mt-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
+              Request Change
+            </a>
+            </div>
       </div>
     </div>
   </div>
