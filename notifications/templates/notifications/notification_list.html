@@ -59,7 +59,7 @@
                 <span class="inline-block align-middle mr-8">
                     <b class="capitalize">{{ notification.title }}:</b> {{ notification.text }}
                 </span>
-                <a href="{% url 'notifications:notification-delete' notification.pk %}" class="absolute bg-transparent text-2xl font-semibold leading-none right-0 top-0 mt-4 mr-6 outline-none focus:outline-none">
+                <a href="{% url 'notifications:notification-delete' notification.pk %}" id="delete" class="absolute bg-transparent text-2xl font-semibold leading-none right-0 top-0 mt-4 mr-6 outline-none focus:outline-none">
                 ×
                 </a>
             </div>

@@ -17,8 +17,8 @@
           </a>
         </div>
         <div class="flex border-t border-gray-300 py-2">
-          <span class="text-gray-500"><b>Title</b></span>
-          <span class="ml-auto text-gray-900">{{ ticket.title }}</span>
+          <span class="text-gray-500"><b>Project</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.project }}</span>
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Assigned to</b></span>
@@ -30,11 +30,15 @@
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Deadline</b></span>
-          <span class="ml-auto text-gray-900">{{ ticket.due_to|timeuntil }}</span>
+          <span class="ml-auto text-gray-900">{{ ticket.deadline|timeuntil }}</span>
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Date created</b></span>
           <span class="ml-auto text-gray-900">{{ ticket.created_date }}</span>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Tester</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.tester }}</span>
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Description:</b></span>

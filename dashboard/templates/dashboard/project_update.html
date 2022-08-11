@@ -20,7 +20,7 @@
           <form method="post">
             {% csrf_token %}
             {{ form|crispy }}
-            <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="{{ color_code }}" title="Choose your color">
+            <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="{{ project.color_code }}" title="Choose your color">
             <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
           </form>
         {% if request.user.is_organizer %}
@@ -31,7 +31,14 @@
           <a href="{% url 'dashboard:project-archive' project.pk %}" class="w-1/2 mt-3 text-white bg-red-400 border-0 py-2 px-6 ml-2 focus:outline-none hover:bg-red-500 rounded">
               Archive
             </a>
+
         </div>
+            {% else %}
+            <div class="mt-5 py-5 border-t border-gray-200">
+            <a href="{% url 'dashboard:project-request-change' project.pk %}" class="w-1/2 mt-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
+              Request Change
+            </a>
+            </div>
           {% endif %}
       </div>
     </div>

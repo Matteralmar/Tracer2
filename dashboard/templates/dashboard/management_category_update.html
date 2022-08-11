@@ -4,7 +4,7 @@
 {% block content %}
 
 <section class="text-gray-600 body-font overflow-hidden">
-  <div class="container mx-auto">
+  <div class="container  mx-auto">
     <div class="lg:w-4/5 mx-auto flex flex-wrap">
       <div class="lg:w-1/2 w-full lg:pr-10 lg:py-6 mb-6 lg:mb-0 max-w-lg mx-auto">
         <h2 class="text-sm title-font text-gray-500 tracking-widest">TICKET/<a href="{% url 'dashboard:project-management' ticket.project.pk %}" class="text-blue-500 hover:text-blue-700">{{ ticket.project.title }}</a></h2>
@@ -13,10 +13,10 @@
           <a href="{% url 'dashboard:management-ticket-detail' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
               Overview
           </a>
-          <a href="{% url 'dashboard:management-category-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
+          <a href="{% url 'dashboard:management-category-update' ticket.pk %}" class="flex-grow text-indigo-500 border-b-2 border-indigo-500 py-2 text-lg px-1">
               Category
           </a>
-          <a href="{% url 'dashboard:management-ticket-update' ticket.pk %}" class="flex-grow text-indigo-500 border-b-2 border-indigo-500 py-2 text-lg px-1">
+          <a href="{% url 'dashboard:management-ticket-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
               Update Details
           </a>
         </div>
@@ -25,12 +25,6 @@
             {{ form|crispy }}
             <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">Submit</button>
           </form>
-        <div class="mt-5 py-5 border-t border-gray-200">
-          <a href="{% url 'dashboard:management-ticket-delete' ticket.pk %}" class="w-1/2 mt-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
-              Delete
-            </a>
-        </div>
-
       </div>
     </div>
   </div>

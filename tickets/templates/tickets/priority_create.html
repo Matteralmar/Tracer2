@@ -10,7 +10,13 @@
     </div>
     <form method="post" class="mt-5">
         {% csrf_token %}
-        {{ form|crispy }}
+        <div id="div_id_name" class="mb-1">
+            <label for="id_name" class="block text-gray-700 text-sm font-bold mb-2">
+            Name<span class="asteriskField">*</span>
+            </label>
+            <input type="text" name="name" maxlength="30" class="textinput rounded-lg py-2 appearance-none block bg-white focus:outline-none px-4 w-full leading-normal text-gray-700 border border-gray-300" required id="id_name">
+        </div>
+
         <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="#563d7c" title="Choose your color">
         <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
             Submit

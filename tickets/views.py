@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.mail import send_mail
 from django.http.response import JsonResponse
-from django.shortcuts import render, redirect, reverse
+from django.shortcuts import render, reverse, render, get_object_or_404
 from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponse, Http404
 from django.views import generic, View
@@ -20,7 +20,6 @@ from django.template.loader import render_to_string
 from django.contrib.auth import login
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
-
 
 class SignupView(generic.CreateView):
     template_name = "registration/signup.html"
@@ -85,13 +84,13 @@ class TicketListView(NotManagerAndLoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         user = self.request.user
+        project = Project.objects.filter(archive=False)
         if user.is_organizer:
-            project = Project.objects.filter(organisation=user.account, archive=False)
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
-            project = Project.objects.filter(organisation=user.member.organisation, archive=False)
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
-            queryset = queryset.filter(assigned_to__user=user)
+            status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
+            queryset = queryset.filter(~Q(status_id__in=status_id), assigned_to__user=user)
         else:
             project = Project.objects.filter(organisation=user.member.organisation, archive=False)
             queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
@@ -105,11 +104,12 @@ class TicketDetailView(NotManagerAndLoginRequiredMixin, generic.DetailView):
     def get_queryset(self):
         user = self.request.user
         project = Project.objects.filter(archive=False)
+        status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         if user.is_organizer:
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
-            queryset = queryset.filter(assigned_to__user=user)
+            queryset = queryset.filter(~Q(status_id__in=status_id), assigned_to__user=user)
         else:
             queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
         return queryset
@@ -117,7 +117,7 @@ class TicketDetailView(NotManagerAndLoginRequiredMixin, generic.DetailView):
 
 class TicketCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
     template_name = "tickets/ticket_create.html"
-    form_class = TicketModelForm
+    form_class = TicketCreateModelForm
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(TicketCreateView, self).get_form_kwargs(**kwargs)
@@ -141,46 +141,38 @@ class TicketCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
             ticket.organisation = user.member.organisation
             ticket.author = user
             ticket.save()
+        titl = form.cleaned_data['title']
         if user.role != 'developer':
-            titl = form.cleaned_data['title']
             assigned_to = form.cleaned_data['assigned_to']
             project = form.cleaned_data['project']
             if assigned_to is not None:
-                user = User.objects.get(username=assigned_to)
                 Notification.objects.create(
                     title=f'New ticket',
                     text=f'You was assigned a new "{titl}" ticket by {self.request.user.username}',
-                    recipient=user
+                    recipient=assigned_to.user
                 )
-            manager_id = Project.objects.filter(title=project).values_list('project_manager', flat=True)[0]
-            if manager_id is not None:
-                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)[0]
-                user = User.objects.get(id=user_id)
+
+            if project.project_manager is not None:
                 Notification.objects.create(
                     title=f'New ticket',
                     text=f'{self.request.user.username} created "{titl}" ticket for "{project}" project',
-                    recipient=user
+                    recipient=project.project_manager.user
                 )
             return super(TicketCreateView, self).form_valid(form)
         else:
-            titl = form.cleaned_data['title']
             project = form.cleaned_data['project']
-            manager_id = Project.objects.filter(title=project).values_list('project_manager', flat=True)[0]
-            if manager_id is not None:
-                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)[0]
-                user = User.objects.get(id=user_id)
+            if project.project_manager is not None:
                 Notification.objects.create(
                     title=f'New ticket',
                     text=f'{self.request.user.username} created "{titl}" ticket for "{project}" project',
-                    recipient=user
+                    recipient=project.project_manager.user
                 )
             return super(TicketCreateView, self).form_valid(form)
 
 
-
-class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
+class TicketUpdateView(OrgDevAndLoginRequiredMixin, generic.UpdateView):
     template_name = "tickets/ticket_update.html"
-    form_class = TicketModelForm
+    form_class = TicketUpdateModelForm
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(TicketUpdateView, self).get_form_kwargs(**kwargs)
@@ -192,13 +184,12 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
     def get_queryset(self):
         user = self.request.user
         project = Project.objects.filter(archive=False)
+        status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         if user.is_organizer:
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
-        elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
-            queryset = queryset.filter(assigned_to__user=user)
         else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
+            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
+            queryset = queryset.filter(~Q(status_id__in=status_id), assigned_to__user=user)
         return queryset
 
 
@@ -216,108 +207,102 @@ class TicketUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
     def form_valid(self, form):
         user = self.request.user
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
-        titl = form.cleaned_data['title']
-        assigned_to = form.cleaned_data['assigned_to']
-        project = form.cleaned_data['project']
-        if ticket.title != titl:
-            if user.role != 'developer':
-                if ticket.assigned_to is not None and ticket.assigned_to == assigned_to:
-                    user = User.objects.get(username=ticket.assigned_to)
-                    Notification.objects.create(
-                        title=f'Ticket name change',
-                        text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}',
-                        recipient=user
-                    )
-            manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
-            if manager_id is not None:
-                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
-                user = User.objects.get(id=user_id[0])
-                Notification.objects.create(
-                    title=f'Ticket name change',
-                    text=f'There was a name change of "{ticket.title}" into "{titl}" ticket from your "{ticket.project}" project by {self.request.user.username}',
-                    recipient=user
-                )
-        if user.role != 'developer':
+        if user.is_organizer:
+            titl = form.cleaned_data['title']
+            assigned_to = form.cleaned_data['assigned_to']
+            project = form.cleaned_data['project']
             if (assigned_to and ticket.assigned_to is not None) and (assigned_to == ticket.assigned_to):
-                user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Ticket update',
                     text=f'Your "{titl}" ticket details was updated by {self.request.user.username}',
-                    recipient=user
+                    recipient=ticket.assigned_to.user
                 )
             if (assigned_to and ticket.assigned_to is not None) and (assigned_to != ticket.assigned_to):
-                user = User.objects.get(username=assigned_to)
                 Notification.objects.create(
                     title=f'New ticket',
                     text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
-                    recipient=user
+                    recipient=assigned_to.user
                 )
-                user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Unassigned ticket',
                     text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
-                    recipient=user
+                    recipient=ticket.assigned_to.user
                 )
             if ticket.assigned_to is None and assigned_to is not None:
-                user = User.objects.get(username=assigned_to)
                 Notification.objects.create(
                     title=f'New ticket',
                     text=f'"{titl}" ticket was assigned to you by {self.request.user.username}',
-                    recipient=user
+                    recipient=assigned_to.user
                 )
             if ticket.assigned_to is not None and assigned_to is None:
-                user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Unassigned ticket',
                     text=f'"{ticket.title}" ticket was unassigned from you by {self.request.user.username}',
-                    recipient=user
+                    recipient=ticket.assigned_to.user
                 )
-        if (project and ticket.project is not None) and (project == ticket.project):
-            manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
-            if manager_id is not None:
-                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
-                user = User.objects.get(id=user_id[0])
+            if (project and ticket.project is not None) and (project == ticket.project):
+                if project.project_manager is not None:
+                    Notification.objects.create(
+                        title=f'Ticket update',
+                        text=f'{self.request.user.username} updated "{titl}" ticket for "{project}" project',
+                        recipient=ticket.project.project_manager.user
+                    )
+            if (project and ticket.project is not None) and (project != ticket.project):
+                Notification.objects.create(
+                        title=f'New ticket',
+                        text=f'"{titl}" ticket was assigned to your "{project}" project by {self.request.user.username}',
+                        recipient=project.project_manager.user
+                    )
+
+                Notification.objects.create(
+                        title=f'Unassigned ticket',
+                        text=f'"{ticket.title}" ticket was unassigned from your "{ticket.project}" project by {self.request.user.username}',
+                        recipient=ticket.project.project_manager.user
+                    )
+
+            if titl != ticket.title:
+                if ticket.assigned_to is not None and ticket.assigned_to == assigned_to:
+                    Notification.objects.create(
+                        title=f'Ticket name change',
+                        text=f'There was a name change of "{ticket.title}" into "{titl}" by {self.request.user.username}',
+                        recipient=ticket.assigned_to.user
+                    )
+
+                if ticket.project.project_manager is not None and project == ticket.project:
+                    Notification.objects.create(
+                        title=f'Ticket name change',
+                        text=f'There was a name change of "{ticket.title}" into "{titl}" ticket from your "{ticket.project}" project by {self.request.user.username}',
+                        recipient=ticket.project.project_manager.user
+                    )
+
+        if user.role == 'developer':
+            status = form.cleaned_data['status']
+            if ticket.project.project_manager is not None:
+                if status is not None and status.test_status:
+                    ticket = Ticket.objects.get(id=self.kwargs["pk"])
+                    if ticket.project.project_manager.user is not None:
+                        Notification.objects.create(
+                            title=f'Test ticket',
+                            text=f'"{ticket.title}" is in your "{ticket.project}" project ready for a test',
+                            recipient=ticket.project.project_manager.user
+                        )
+                    return super(TicketUpdateView, self).form_valid(form)
                 Notification.objects.create(
                     title=f'Ticket update',
-                    text=f'{self.request.user.username} updated "{titl}" ticket for "{project}" project',
-                    recipient=user
+                    text=f'{self.request.user.username} updated "{ticket.title}" ticket for "{ticket.project}" project',
+                    recipient=ticket.project.project_manager.user
                 )
-        if (project and ticket.project is not None) and (project != ticket.project):
-            manager_id = Project.objects.filter(title=project).values_list('project_manager', flat=True)[0]
-            if manager_id is not None:
-                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
-                user = User.objects.get(id=user_id[0])
-                Notification.objects.create(
-                    title=f'New ticket',
-                    text=f'"{titl}" ticket was assigned to your "{project}" project by {self.request.user.username}',
-                    recipient=user
-                )
-            manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
-            if manager_id is not None:
-                user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)
-                user = User.objects.get(id=user_id[0])
-                Notification.objects.create(
-                    title=f'Unassigned ticket',
-                    text=f'"{ticket.title}" ticket was unassigned from your "{ticket.project}" project by {self.request.user.username}',
-                    recipient=user
-                )
-            return super(TicketUpdateView, self).form_valid(form)
+
         return super(TicketUpdateView, self).form_valid(form)
 
 
-class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
+class TicketDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
     template_name = "tickets/ticket_delete.html"
 
     def get_queryset(self):
         user = self.request.user
         project = Project.objects.filter(archive=False)
-        if user.is_organizer:
-            queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
-        elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
-            queryset = queryset.filter(assigned_to__user=user, author=user)
-        else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
+        queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         return queryset
 
     def form_valid(self, form):
@@ -325,41 +310,41 @@ class TicketDeleteView(NotManagerAndLoginRequiredMixin, generic.DeleteView):
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         if user.role != 'developer':
             if ticket.assigned_to is not None:
-                user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'Ticket deleted',
                     text=f'The ticket "{ticket.title}" you were assigned to was deleted by {self.request.user.username}',
-                    recipient=user
+                    recipient=ticket.assigned_to.user
                 )
-        manager_id = Project.objects.filter(title=ticket.project).values_list('project_manager', flat=True)[0]
-        if manager_id is not None:
-            user_id = Member.objects.filter(id=manager_id).values_list('user_id', flat=True)[0]
-            user = User.objects.get(id=user_id)
+
+        if ticket.project.project_manager is not None:
             Notification.objects.create(
                 title=f'Ticket deleted',
                 text=f'{self.request.user.username} deleted "{ticket.title}" ticket from "{ticket.project}" project',
-                recipient=user
+                recipient=ticket.project.project_manager.user
             )
-            return super(TicketDeleteView, self).form_valid(form)
         return super(TicketDeleteView, self).form_valid(form)
 
     def get_success_url(self):
         return reverse("tickets:ticket-list")
 
-class TicketRequestDeleteView(DeveloperAndLoginRequiredMixin, generic.TemplateView):
-    template_name = "tickets/ticket_request_delete.html"
+class TicketRequestChangeView(TstrDevAndLoginRequiredMixin, generic.TemplateView):
+    template_name = "tickets/ticket_request_change.html"
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
-        member = Member.objects.get(user_id=user.id)
         project = Project.objects.filter(organisation=user.member.organisation, archive=False)
-        ticket = Ticket.objects.get(project__in=project, pk=self.kwargs["pk"], assigned_to=member)
-        user = User.objects.get(tickets=ticket)
-        Notification.objects.create(
-            title=f'Deletion Request',
-            text=f'{self.request.user.username} requested to delete "{ticket.title}" ticket.',
-            recipient=user
-        )
+        if user.role == 'tester':
+            ticket = get_object_or_404(Ticket, author=user, project__in=project, pk=self.kwargs["pk"])
+        else:
+            status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
+            member = Member.objects.get(user_id=user.id)
+            ticket = get_object_or_404(Ticket, ~Q(status_id__in=status_id), assigned_to=member, project__in=project, pk=self.kwargs["pk"])
+        if ticket.project.project_manager is not None:
+            Notification.objects.create(
+                title=f'Request Change',
+                text=f'{self.request.user.username} requested a change to "{ticket.title}" ticket. Please contact {self.request.user.username} for more details.',
+                recipient=ticket.project.project_manager.user
+            )
         return redirect("tickets:ticket-list")
 
 
@@ -372,12 +357,10 @@ class StatusListView(OrganizerAndLoginRequiredMixin, generic.ListView):
         user = self.request.user
         project = Project.objects.filter(organisation=user.account, archive=False)
         queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
-        color_code = Status.objects.filter(organisation=user.account).values_list('color_code', flat=True)
         status_counts = Ticket.objects.filter(organisation=user.account, status_id__isnull=False, project__in=project).values('status_id').annotate(total=Count('status_id'))
         status_ids = [st['status_id'] for st in status_counts]
         context.update({
             "unassigned_ticket_count": queryset.filter(status__isnull=True).count(),
-            "color_code": color_code,
             "status_ids": status_ids,
             "status_counts": status_counts,
         })
@@ -386,10 +369,7 @@ class StatusListView(OrganizerAndLoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Status.objects.filter(organisation=user.account)
-        else:
-            queryset = Status.objects.filter(organisation=user.member.organisation)
+        queryset = Status.objects.filter(organisation=user.account)
         return queryset
 
 class StatusDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
@@ -398,10 +378,7 @@ class StatusDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Status.objects.filter(organisation=user.account)
-        else:
-            queryset = Status.objects.filter(organisation=user.member.organisation)
+        queryset = Status.objects.filter(organisation=user.account)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -428,16 +405,14 @@ class StatusCreateView(OrganizerAndLoginRequiredMixin, generic.CreateView):
 class StatusUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
     template_name = "tickets/status_update.html"
     form_class = StatusModelForm
+    context_object_name = "status"
 
     def get_success_url(self):
         return reverse("tickets:status-list")
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Status.objects.filter(organisation=user.account)
-        else:
-            queryset = Status.objects.filter(organisation=user.member.organisation)
+        queryset = Status.objects.filter(organisation=user.account)
         return queryset
 
     def form_valid(self, form):
@@ -446,17 +421,6 @@ class StatusUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
         color_data.color_code = color_code_client
         return super(StatusUpdateView, self).form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super(StatusUpdateView, self).get_context_data(**kwargs)
-        user = self.request.user
-        if user.is_organizer:
-            queryset = Status.objects.filter(organisation=user.account, id=self.kwargs["pk"]).values_list('color_code', flat=True)
-        else:
-            queryset = Status.objects.filter(organisation=user.member.organisation, id=self.kwargs["pk"]).values_list('color_code', flat=True)
-        context.update({
-            "color_code": queryset[0],
-        })
-        return context
 
 
 class StatusDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
@@ -467,15 +431,13 @@ class StatusDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Status.objects.filter(organisation=user.account)
-        else:
-            queryset = Status.objects.filter(organisation=user.member.organisation)
+        queryset = Status.objects.filter(organisation=user.account)
         return queryset
 
-class TicketCategoryUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateView):
-    template_name = "tickets/ticket_status_update.html"
-    form_class = TicketSatusUpdateForm
+
+class TicketCategoryUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
+    template_name = "tickets/ticket_category_update.html"
+    form_class = TicketCategoryUpdateForm
 
     def get_form_kwargs(self, **kwargs):
         kwargs = super(TicketCategoryUpdateView, self).get_form_kwargs(**kwargs)
@@ -487,34 +449,20 @@ class TicketCategoryUpdateView(NotManagerAndLoginRequiredMixin, generic.UpdateVi
     def get_queryset(self):
         user = self.request.user
         project = Project.objects.filter(archive=False)
-        if user.is_organizer:
-            queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
-        elif user.role == 'developer':
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
-            queryset = queryset.filter(assigned_to__user=user)
-        else:
-            queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
-
+        queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         return queryset
 
     def form_valid(self, form):
+        id = self.kwargs["pk"]
+        ticket = Ticket.objects.get(id=id)
         status = form.cleaned_data['status']
-        test_status = Status.objects.filter(name=status).values_list('test_status', flat=True)
-        if self.request.user.role != 'tester':
-            if len(test_status) != 0 and test_status[0]:
-                id = self.kwargs["pk"]
-                ticket = Ticket.objects.get(id=id)
-                project_id = Ticket.objects.filter(id=id).values_list('project', flat=True)[0]
-                project = Project.objects.filter(id=project_id)
-                users = User.objects.filter(ticket_flow__in=project, role='tester')
-                project = Project.objects.get(id=project_id)
-                if len(users) != 0:
-                    for user in users:
-                        Notification.objects.create(
-                            title=f'Test ticket',
-                            text=f'"{ticket.title}" is in your "{project.title}" project and ready for a test',
-                            recipient=user
-                        )
+        if status is not None and status.test_status and ticket.status != status:
+            if ticket.project.project_manager is not None:
+                Notification.objects.create(
+                    title=f'Test ticket',
+                    text=f'"{ticket.title}" is in your "{ticket.project.title}" project ready for a test',
+                    recipient=ticket.project.project_manager.user
+                )
         return super(TicketCategoryUpdateView, self).form_valid(form)
 
     def get_success_url(self):
@@ -530,12 +478,10 @@ class PriorityListView(OrganizerAndLoginRequiredMixin, generic.ListView):
         user = self.request.user
         project = Project.objects.filter(organisation=user.account, archive=False)
         queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
-        color_code = Priority.objects.filter(organisation=user.account).values_list('color_code', flat=True)
         priority_counts = Ticket.objects.filter(organisation=user.account, status_id__isnull=False, project__in=project).values('priority_id').annotate(total=Count('priority_id'))
         priority_ids = [pr['priority_id'] for pr in priority_counts]
         context.update({
             "unassigned_ticket_count": queryset.filter(priority__isnull=True).count(),
-            "color_code": color_code,
             "priority_ids": priority_ids,
             "priority_counts": priority_counts,
         })
@@ -544,10 +490,7 @@ class PriorityListView(OrganizerAndLoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Priority.objects.filter(organisation=user.account)
-        else:
-            queryset = Priority.objects.filter(organisation=user.member.organisation)
+        queryset = Priority.objects.filter(organisation=user.account)
         return queryset
 
 class PriorityDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
@@ -556,10 +499,7 @@ class PriorityDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Priority.objects.filter(organisation=user.account)
-        else:
-            queryset = Priority.objects.filter(organisation=user.member.organisation)
+        queryset = Priority.objects.filter(organisation=user.account)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -588,16 +528,14 @@ class PriorityCreateView(OrganizerAndLoginRequiredMixin, generic.CreateView):
 class PriorityUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
     template_name = "tickets/priority_update.html"
     form_class = PriorityModelForm
+    context_object_name = "priority"
 
     def get_success_url(self):
         return reverse("tickets:priority-list")
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Priority.objects.filter(organisation=user.account)
-        else:
-            queryset = Priority.objects.filter(organisation=user.member.organisation)
+        queryset = Priority.objects.filter(organisation=user.account)
         return queryset
 
     def form_valid(self, form):
@@ -606,17 +544,7 @@ class PriorityUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
         color_data.color_code = color_code_client
         return super(PriorityUpdateView, self).form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super(PriorityUpdateView, self).get_context_data(**kwargs)
-        user = self.request.user
-        if user.is_organizer:
-            queryset = Priority.objects.filter(organisation=user.account, id=self.kwargs["pk"]).values_list('color_code', flat=True)
-        else:
-            queryset = Priority.objects.filter(organisation=user.member.organisation, id=self.kwargs["pk"]).values_list('color_code', flat=True)
-        context.update({
-            "color_code": queryset[0],
-        })
-        return context
+
 class PriorityDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
     template_name = "tickets/priority_delete.html"
 
@@ -625,10 +553,7 @@ class PriorityDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Priority.objects.filter(organisation=user.account)
-        else:
-            queryset = Priority.objects.filter(organisation=user.member.organisation)
+        queryset = Priority.objects.filter(organisation=user.account)
         return queryset
 
 class TypeListView(OrganizerAndLoginRequiredMixin, generic.ListView):
@@ -640,12 +565,10 @@ class TypeListView(OrganizerAndLoginRequiredMixin, generic.ListView):
         user = self.request.user
         project = Project.objects.filter(organisation=user.account, archive=False)
         queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
-        color_code = Type.objects.filter(organisation=user.account).values_list('color_code', flat=True)
         type_counts = Ticket.objects.filter(organisation=user.account, status_id__isnull=False,project__in=project).values('type_id').annotate(total=Count('type_id'))
         type_ids = [tp['type_id'] for tp in type_counts]
         context.update({
             "unassigned_ticket_count": queryset.filter(type__isnull=True).count(),
-            "color_code": color_code,
             "type_ids": type_ids,
             "type_counts": type_counts,
         })
@@ -653,10 +576,7 @@ class TypeListView(OrganizerAndLoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Type.objects.filter(organisation=user.account)
-        else:
-            queryset = Type.objects.filter(organisation=user.member.organisation)
+        queryset = Type.objects.filter(organisation=user.account)
         return queryset
 
 class TypeDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
@@ -665,10 +585,7 @@ class TypeDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Type.objects.filter(organisation=user.account)
-        else:
-            queryset = Type.objects.filter(organisation=user.member.organisation)
+        queryset = Type.objects.filter(organisation=user.account)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -696,16 +613,14 @@ class TypeCreateView(OrganizerAndLoginRequiredMixin, generic.CreateView):
 class TypeUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
     template_name = "tickets/type_update.html"
     form_class = TypeModelForm
+    context_object_name = "type"
 
     def get_success_url(self):
         return reverse("tickets:type-list")
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Type.objects.filter(organisation=user.account)
-        else:
-            queryset = Type.objects.filter(organisation=user.member.organisation)
+        queryset = Type.objects.filter(organisation=user.account)
         return queryset
 
     def form_valid(self, form):
@@ -714,17 +629,6 @@ class TypeUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateView):
         color_data.color_code = color_code_client
         return super(TypeUpdateView, self).form_valid(form)
 
-    def get_context_data(self, **kwargs):
-        context = super(TypeUpdateView, self).get_context_data(**kwargs)
-        user = self.request.user
-        if user.is_organizer:
-            queryset = Type.objects.filter(organisation=user.account, id=self.kwargs["pk"]).values_list('color_code', flat=True)
-        else:
-            queryset = Type.objects.filter(organisation=user.member.organisation, id=self.kwargs["pk"]).values_list('color_code', flat=True)
-        context.update({
-            "color_code": queryset[0],
-        })
-        return context
 
 class TypeDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
     template_name = "tickets/type_delete.html"
@@ -734,11 +638,9 @@ class TypeDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_organizer:
-            queryset = Type.objects.filter(organisation=user.account)
-        else:
-            queryset = Type.objects.filter(organisation=user.member.organisation)
+        queryset = Type.objects.filter(organisation=user.account)
         return queryset
+
 
 class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
     template_name = "tickets/comment_create.html"
@@ -748,15 +650,13 @@ class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
         return reverse("tickets:ticket-detail", kwargs={"pk": self.kwargs["pk"]})
 
     def get_context_data(self, **kwargs):
-        context = super(CommentCreateView, self).get_context_data(**kwargs)
         user = self.request.user
-        if user.is_organizer:
-            project = Project.objects.filter(organisation=user.account, archive=False).values_list('id', flat=True)
-        else:
-            project = Project.objects.filter(organisation=user.member.organisation, archive=False).values_list('id',flat=True)
+        context = super(CommentCreateView, self).get_context_data(**kwargs)
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
-        if ticket.project in project:
-            raise Http404
+        if user.is_organizer:
+            project = get_object_or_404(Project, organisation=user.account, archive=False, title=ticket.project.title)
+        else:
+            project = get_object_or_404(Project, organisation=user.member.organisation, archive=False, title=ticket.project.title)
         context.update({
             "ticket": ticket,
         })
@@ -764,25 +664,25 @@ class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
 
     def form_valid(self, form):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
-        ticket = Ticket.objects.get(pk=self.kwargs["pk"], project__in=project)
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         comment = form.save(commit=False)
         comment.ticket = ticket
         comment.author = user
         comment.save()
+        ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         if ticket.assigned_to is not None:
             if user.role != 'developer':
-                user = User.objects.get(username=ticket.assigned_to)
                 Notification.objects.create(
                     title=f'New comment',
                     text=f'There is a new comment created for "{ticket.title}" ticket by {self.request.user.username}',
-                    recipient=user
+                    recipient=ticket.assigned_to.user
                 )
         return super(CommentCreateView, self).form_valid(form)
 
 class CommentUpdateView(CommentAndLoginRequiredMixin, generic.UpdateView):
     template_name = "tickets/comment_update.html"
     form_class = CommentModelForm
+    context_object_name = "comment"
 
     def get_queryset(self):
         user = self.request.user
@@ -819,66 +719,71 @@ class TicketJsonView(OrganizerAndLoginRequiredMixin,generic.View):
             "qs": qs,
         })
 
+
 def filter_(request):
     ctx = {}
     filtr = request.POST.get("filter")
     name = request.POST.get("name")
     if name == 'assigned_to':
+
         if request.user.is_organizer:
             qs = Project.objects.filter(organisation=request.user.account, archive=False)
         else:
             qs = Project.objects.filter(organisation=request.user.member.organisation, archive=False)
+
         if filtr == '' and request.user.is_organizer:
             ctx["projects"] = list(qs.values())
             return JsonResponse(ctx)
+
         if filtr == '' and request.user.is_member:
-            results = User.objects.filter(id=request.user.id)
-            for usr in results:
-                proj = list(usr.ticket_flow.all())
+            proj = list(request.user.ticket_flow.all())
             qs = qs.filter(title__in=proj, archive=False)
             ctx["projects"] = list(qs.values())
             return JsonResponse(ctx)
-        dev = int(Member.objects.filter(id=filtr).values_list('user_id', flat=True)[0])
+
         if request.user.is_organizer:
-            results = User.objects.filter(id=dev)
-            for usr in results:
-                proj = list(usr.ticket_flow.all())
+            result = User.objects.get(member__id=filtr)
+            proj = list(result.ticket_flow.all())
             qs = qs.filter(title__in=proj, archive=False)
+
         if request.user.role == 'tester':
-            results = User.objects.filter(id=dev)
-            for usr in results:
-                proj_1 = list(usr.ticket_flow.all())
-            results = User.objects.filter(id=request.user.id)
-            for usr in results:
-                proj_2 = list(usr.ticket_flow.all())
+            result = User.objects.get(member__id=filtr)
+            proj_1 = list(result.ticket_flow.all())
+            proj_2 = list(request.user.ticket_flow.all())
             qs = qs.filter(title__in=proj_1, archive=False) & Project.objects.filter(title__in=proj_2,archive=False)
+
         ctx["projects"] = list(qs.values())
+
     if name == 'project':
         if request.user.is_organizer:
-            user_id = Member.objects.filter(organisation=request.user.account).values_list('user_id', flat=True)
+            members = Member.objects.filter(organisation=request.user.account)
         else:
-            user_id = Member.objects.filter(organisation=request.user.member.organisation).values_list('user_id', flat=True)
+            members = Member.objects.filter(organisation=request.user.member.organisation)
+
         if filtr == '' and request.user.is_organizer:
-            qs = User.objects.filter(id__in=user_id, role='developer')
+            qs = User.objects.filter(member__in=members, role='developer')
             qs = qs.select_related('member').values('member', 'username')
             ctx["users"] = list(qs)
             return JsonResponse(ctx)
+
         if filtr == '' and request.user.is_member:
-            results = User.objects.filter(id=request.user.id)
-            for usr in results:
-                proj = list(usr.ticket_flow.all())
+            proj = list(request.user.ticket_flow.all())
             project = Project.objects.filter(title__in=proj, archive=False)
-            qs = User.objects.filter(id__in=user_id, role='developer', ticket_flow__in=project).distinct()
+            qs = User.objects.filter(member__in=members, role='developer', ticket_flow__in=project).distinct()
             qs = qs.select_related('member').values('member', 'username')
             ctx["users"] = list(qs)
             return JsonResponse(ctx)
+
         project = Project.objects.get(id=filtr, archive=False)
+
         if request.user.is_organizer:
-            qs = User.objects.filter(id__in=user_id, role='developer', ticket_flow=project).distinct()
+            qs = User.objects.filter(member__in=members, role='developer', ticket_flow=project).distinct()
             qs = qs.select_related('member').values('member', 'username')
             ctx["users"] = list(qs)
+
         if request.user.role == 'tester':
-            qs = User.objects.filter(id__in=user_id, role='developer', ticket_flow=project).distinct()
+            qs = User.objects.filter(member__in=members, role='developer', ticket_flow=project).distinct()
             qs = qs.select_related('member').values('member', 'username')
             ctx["users"] = list(qs)
+
     return JsonResponse(ctx)

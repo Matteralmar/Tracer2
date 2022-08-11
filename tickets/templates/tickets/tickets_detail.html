@@ -12,16 +12,20 @@
           <a href="{% url 'tickets:ticket-detail' ticket.pk %}" class="flex-grow text-indigo-500 border-b-2 border-indigo-500 py-2 text-lg px-1">
               Overview
           </a>
-          <a href="{% url 'tickets:ticket-status-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
-              Category
-          </a>
+          {% if request.user.is_organizer %}
+            <a href="{% url 'tickets:ticket-status-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
+                Category
+            </a>
+            {% endif %}
+        {% if request.user.role != 'tester' %}
           <a href="{% url 'tickets:ticket-update' ticket.pk %}" class="flex-grow border-b-2 border-gray-300 py-2 text-lg px-1">
               Update Details
           </a>
+        {% endif %}
         </div>
-        <div class="flex border-t border-gray-300 py-2">
-          <span class="text-gray-500"><b>Title</b></span>
-          <span class="ml-auto text-gray-900">{{ ticket.title }}</span>
+         <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Project</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.project }}</span>
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Assigned to</b></span>
@@ -33,11 +37,15 @@
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Deadline</b></span>
-          <span class="ml-auto text-gray-900">{{ ticket.due_to|timeuntil }}</span>
+          <span class="ml-auto text-gray-900">{{ ticket.deadline|timeuntil }}</span>
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Date created</b></span>
           <span class="ml-auto text-gray-900">{{ ticket.created_date }}</span>
+        </div>
+        <div class="flex border-t border-gray-300 py-2">
+          <span class="text-gray-500"><b>Tester</b></span>
+          <span class="ml-auto text-gray-900">{{ ticket.tester }}</span>
         </div>
         <div class="flex border-t border-gray-300 py-2">
           <span class="text-gray-500"><b>Description:</b></span>

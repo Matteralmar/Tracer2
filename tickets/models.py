@@ -7,10 +7,12 @@ from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
     ROLE_CHOICES = [
-        ('tester', 'Tester'),
-        ('developer', 'Developer'),
-        ('project_manager', 'Project Manager'),
+        ['tester', 'Inspect'],
+        ['developer', 'Comply'],
+        ['project_manager', 'Manage']
     ]
+
+
     username = models.CharField(max_length=30, unique=True)
     email = models.EmailField(max_length=90, unique=True)
     is_organizer = models.BooleanField(default=True)
@@ -38,7 +40,7 @@ class Project(models.Model):
         ('in_progress', 'In Progress'),
         ('closed', 'Closed'),
     ]
-    title = models.CharField(max_length=32, blank=False, null=False, unique=True)
+    title = models.CharField(max_length=32)
     description = models.TextField(max_length=1000, blank=True, null=True)
     start_date = models.DateField(default=timezone.now)
     end_date = models.DateField(blank=True, null=True)
@@ -89,7 +91,7 @@ class Ticket(models.Model):
     priority = models.ForeignKey("Priority", null=True, blank=True, on_delete=models.SET_NULL)
     type = models.ForeignKey("Type", null=True, blank=True, on_delete=models.SET_NULL)
     created_date = models.DateTimeField(default=timezone.now)
-    due_to = models.DateField(blank=True, null=True)
+    deadline = models.DateField(blank=False, null=True)
     description = models.TextField(max_length=1000, blank=False, null=False)
     author = models.ForeignKey("User", null=True, blank=True, on_delete=models.SET_NULL, related_name='tickets')
     project = models.ForeignKey('Project', related_name='tickets', on_delete=models.CASCADE)

@@ -10,7 +10,19 @@
     </div>
     <form method="post" class="mt-5" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ form|crispy }}
+        <div id="div_id_notes" class="mb-3"> <label for="id_notes" class="block text-gray-700 text-sm font-bold mb-2">
+            Notes<span class="asteriskField">*</span> </label>
+            <textarea name="notes" cols="40" rows="10" class="textarea block rounded-lg focus:outline-none leading-normal text-gray-700 appearance-none px-4 border bg-white py-2 w-full border-gray-300" required id="id_notes"></textarea>
+        </div>
+        <div id="div_id_file" class="mb-3">
+        <label for="id_file" class="block text-gray-700 text-sm font-bold mb-2">
+            File
+        </label> <input type="file" name="file" class="clearablefileinput text-sm text-grey-500
+            file:mr-5 file:py-2 file:px-6 mt-2
+            file:rounded-full file:border-0
+            file:text-sm file:font-medium
+            file:bg-blue-100 file:text-blue-700
+            hover:file:cursor-pointer"> </div>
         <button type="submit" class="flex ml-auto mb-3 text-white bg-indigo-500 border-0 py-2 px-6 focus:outline-none hover:bg-indigo-600 rounded">
             Submit
         </button>

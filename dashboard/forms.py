@@ -23,20 +23,25 @@ class ProjectModelForm(forms.ModelForm):
             self.fields['project_manager'].queryset = members
             self.fields["end_date"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
         else:
+            del self.fields['title']
             del self.fields['project_manager']
-            self.fields["end_date"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
+            del self.fields["end_date"]
 
 
 
 
-class ManagementTicketModelForm(forms.ModelForm):
+class ManagementTicketCreateModelForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = (
             'title',
             'assigned_to',
-            'due_to',
+            'deadline',
             'description',
+            'tester',
+            'status',
+            'priority',
+            'type',
         )
 
     def __init__(self, *args, **kwargs):
@@ -46,31 +51,58 @@ class ManagementTicketModelForm(forms.ModelForm):
         project = Project.objects.filter(id=id)
         agents_id = User.objects.filter(role='developer', ticket_flow__in=project).values_list('id')
         members = Member.objects.filter(user_id__in=agents_id, organisation=user.member.organisation)
-        super(ManagementTicketModelForm, self).__init__(*args, **kwargs)
+        testers = User.objects.filter(role='tester', ticket_flow__in=project)
+        statuses = Status.objects.filter(organisation=user.member.organisation)
+        priorities = Priority.objects.filter(organisation=user.member.organisation)
+        types = Type.objects.filter(organisation=user.member.organisation)
+        super(ManagementTicketCreateModelForm, self).__init__(*args, **kwargs)
+        self.fields["status"].queryset = statuses
+        self.fields["priority"].queryset = priorities
+        self.fields["type"].queryset = types
         self.fields['assigned_to'].queryset = members
-        self.fields["due_to"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
+        self.fields["deadline"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
+        self.fields["tester"].queryset = testers
 
 
-class TicketModelForm(forms.ModelForm):
+class ManagementTicketUpdateModelForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = (
             'title',
-            'due_to',
+            'assigned_to',
+            'deadline',
             'description',
-            'status',
             'tester',
         )
 
     def __init__(self, *args, **kwargs):
         request = kwargs.pop("request")
         user = request.user
+        id = request.session['project_id']
+        project = Project.objects.filter(id=id)
+        agents_id = User.objects.filter(role='developer', ticket_flow__in=project).values_list('id')
+        members = Member.objects.filter(user_id__in=agents_id, organisation=user.member.organisation)
+        testers = User.objects.filter(role='tester', ticket_flow__in=project)
+        super(ManagementTicketUpdateModelForm, self).__init__(*args, **kwargs)
+        self.fields['assigned_to'].queryset = members
+        self.fields["deadline"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
+        self.fields["tester"].queryset = testers
+
+
+class TicketModelForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = (
+            'description',
+            'status',
+        )
+
+    def __init__(self, *args, **kwargs):
+        request = kwargs.pop("request")
+        user = request.user
         statuses = Status.objects.filter(organisation=user.member.organisation)
-        tester = User.objects.filter(username=user.username)
         super(TicketModelForm, self).__init__(*args, **kwargs)
-        self.fields["due_to"] = forms.DateField(widget=forms.DateInput(attrs={'type': 'date', 'min': datetime.now().date()}))
         self.fields["status"].queryset = statuses
-        self.fields["tester"].queryset = tester
 
 class AssignMemberForm(forms.Form):
     member = forms.ModelChoiceField(queryset=Member.objects.none())
@@ -85,6 +117,25 @@ class AssignMemberForm(forms.Form):
         members = Member.objects.filter(user_id__in=developer_id, organisation=user.member.organisation)
         super(AssignMemberForm, self).__init__(*args, **kwargs)
         self.fields["member"].queryset = members
+
+class TicketCategoryUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = (
+            'status',
+            'priority',
+            'type',
+        )
+    def __init__(self, *args, **kwargs):
+        request = kwargs.pop("request")
+        user = request.user
+        statuses = Status.objects.filter(organisation=user.member.organisation)
+        priorities = Priority.objects.filter(organisation=user.member.organisation)
+        types = Type.objects.filter(organisation=user.member.organisation)
+        super(TicketCategoryUpdateForm, self).__init__(*args, **kwargs)
+        self.fields["status"].queryset = statuses
+        self.fields["priority"].queryset = priorities
+        self.fields["type"].queryset = types
 
 class CommentModelForm(forms.ModelForm):
     class Meta:

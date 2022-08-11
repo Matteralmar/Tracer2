@@ -11,7 +11,7 @@
     <form method="post" class="mt-5">
         {% csrf_token %}
         {{ form|crispy }}
-        <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="{{ color_code }}" title="Choose your color">
+        <input type="color" class="form-control form-control-color" name="CI" id="exampleColorInput" value="{{ type.color_code }}" title="Choose your color">
         <button type="submit" class="w-full text-white bg-indigo-500 hover:bg-indigo-600 px-3 py-2 rounded-md">
             Submit
         </button>

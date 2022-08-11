@@ -32,6 +32,18 @@ class TesterAndLoginRequiredMixin(AccessMixin):
             return redirect("dashboard:dashboard-chart")
         return super().dispatch(request, *args, **kwargs)
 
+class TstrDevAndLoginRequiredMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated and (not request.user.role == 'tester' or not request.user.role == 'developer'):
+            return redirect("dashboard:dashboard-chart")
+        return super().dispatch(request, *args, **kwargs)
+
+class OrgDevAndLoginRequiredMixin(AccessMixin):
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated and (not request.user.role == 'developer' or not request.user.is_organizer):
+            return redirect("dashboard:dashboard-chart")
+        return super().dispatch(request, *args, **kwargs)
+
 class DeveloperAndLoginRequiredMixin(AccessMixin):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.role == 'developer':
