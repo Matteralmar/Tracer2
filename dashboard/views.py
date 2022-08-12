@@ -678,7 +678,7 @@ def project_archive(request, pk):
     if not user.is_authenticated:
         return redirect('/login/')
     if user.is_organizer:
-        project = Project.objects.get(id=pk, archive=False)
+        project = Project.objects.get(id=pk, archive=False, organisation=user.account)
         project.archive = True
         project.save()
         if project.project_manager is not None:
