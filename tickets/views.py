@@ -84,15 +84,15 @@ class TicketListView(NotManagerAndLoginRequiredMixin, generic.ListView):
 
     def get_queryset(self):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.member.organisation)
         if user.is_organizer:
+            project = Project.objects.filter(archive=False, organisation=user.account)
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
             status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
             queryset = queryset.filter(~Q(status_id__in=status_id), assigned_to__user=user)
         else:
-            project = Project.objects.filter(organisation=user.member.organisation, archive=False)
             queryset = Ticket.objects.filter(organisation=user.member.organisation, author=user, project__in=project)
         return queryset
 
@@ -103,9 +103,10 @@ class TicketDetailView(NotManagerAndLoginRequiredMixin, generic.DetailView):
 
     def get_queryset(self):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.member.organisation)
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         if user.is_organizer:
+            project = Project.objects.filter(archive=False, organisation=user.account)
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
@@ -183,9 +184,10 @@ class TicketUpdateView(OrgDevAndLoginRequiredMixin, generic.UpdateView):
 
     def get_queryset(self):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.member.organisation)
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         if user.is_organizer:
+            project = Project.objects.filter(archive=False, organisation=user.account)
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         else:
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
@@ -301,7 +303,7 @@ class TicketDeleteView(OrganizerAndLoginRequiredMixin, generic.DeleteView):
 
     def get_queryset(self):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.account)
         queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         return queryset
 
@@ -384,7 +386,7 @@ class StatusDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
     def get_context_data(self, **kwargs):
         user = self.request.user
         context = super(StatusDetailView, self).get_context_data(**kwargs)
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.account)
         context["tickets"] = Ticket.objects.filter(organisation=user.account, project__in=project)
         return context
 
@@ -448,7 +450,7 @@ class TicketCategoryUpdateView(OrganizerAndLoginRequiredMixin, generic.UpdateVie
 
     def get_queryset(self):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.account)
         queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         return queryset
 
@@ -505,7 +507,7 @@ class PriorityDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
     def get_context_data(self, **kwargs):
         user = self.request.user
         context = super(PriorityDetailView, self).get_context_data(**kwargs)
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.account)
         context["tickets"] = Ticket.objects.filter(organisation=user.account, project__in=project)
         return context
 
@@ -591,7 +593,7 @@ class TypeDetailView(OrganizerAndLoginRequiredMixin, generic.DetailView):
     def get_context_data(self, **kwargs):
         user = self.request.user
         context = super(TypeDetailView, self).get_context_data(**kwargs)
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.account)
         context["tickets"] = Ticket.objects.filter(organisation=user.account, project__in=project)
         return context
 
@@ -750,7 +752,7 @@ def filter_(request):
             result = User.objects.get(member__id=filtr)
             proj_1 = list(result.ticket_flow.all())
             proj_2 = list(request.user.ticket_flow.all())
-            qs = qs.filter(title__in=proj_1, archive=False) & Project.objects.filter(title__in=proj_2,archive=False)
+            qs = qs.filter(title__in=proj_1, archive=False) & Project.objects.filter(title__in=proj_2,archive=False, organisation=request.user.member.organisation)
 
         ctx["projects"] = list(qs.values())
 
@@ -768,7 +770,7 @@ def filter_(request):
 
         if filtr == '' and request.user.is_member:
             proj = list(request.user.ticket_flow.all())
-            project = Project.objects.filter(title__in=proj, archive=False)
+            project = Project.objects.filter(title__in=proj, archive=False, organisation=request.user.member.organisation)
             qs = User.objects.filter(member__in=members, role='developer', ticket_flow__in=project).distinct()
             qs = qs.select_related('member').values('member', 'username')
             ctx["users"] = list(qs)

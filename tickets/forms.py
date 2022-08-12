@@ -37,7 +37,7 @@ class TicketCreateModelForm(forms.ModelForm):
             results = User.objects.filter(id=user.id)
             for usr in results:
                 proj = list(usr.ticket_flow.all())
-            projects = Project.objects.filter(title__in=proj)
+            projects = Project.objects.filter(title__in=proj, organisation=user.member.organisation)
             user_id = User.objects.filter(ticket_flow__in=projects, role='developer').values_list('id', flat=True)
             members = Member.objects.filter(user_id__in=user_id, organisation=user.member.organisation)
         else:
@@ -48,7 +48,7 @@ class TicketCreateModelForm(forms.ModelForm):
             results = User.objects.filter(id=user.id)
             for usr in results:
                 proj = list(usr.ticket_flow.all())
-            projects = Project.objects.filter(title__in=proj)
+            projects = Project.objects.filter(title__in=proj, organisation=user.member.organisation)
         super(TicketCreateModelForm, self).__init__(*args, **kwargs)
         self.fields["status"].queryset = statuses
         self.fields["priority"].queryset = priorities
