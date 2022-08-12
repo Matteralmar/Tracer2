@@ -658,9 +658,9 @@ class CommentCreateView(NotManagerAndLoginRequiredMixin, generic.CreateView):
         context = super(CommentCreateView, self).get_context_data(**kwargs)
         ticket = Ticket.objects.get(pk=self.kwargs["pk"])
         if user.is_organizer:
-            project = get_object_or_404(Project, organisation=user.account, archive=False, title=ticket.project.title)
+            project = get_object_or_404(Project, organisation=user.account, archive=False, id=ticket.project.id)
         else:
-            project = get_object_or_404(Project, organisation=user.member.organisation, archive=False, title=ticket.project.title)
+            project = get_object_or_404(Project, organisation=user.member.organisation, archive=False, id=ticket.project.id)
         context.update({
             "ticket": ticket,
         })

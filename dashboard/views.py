@@ -323,7 +323,7 @@ class ManagementTicketCreateView(ManagerAndLoginRequiredMixin, generic.CreateVie
     def get_form_kwargs(self, **kwargs):
         user = self.request.user
         kwargs = super(ManagementTicketCreateView, self).get_form_kwargs(**kwargs)
-        project = get_object_or_404(Project, archive=False, project_manager__user=user)
+        project = get_object_or_404(Project, archive=False, project_manager__user=user, id=self.request.session['project_id'])
         kwargs.update({
             "request":self.request
         })
