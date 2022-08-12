@@ -63,21 +63,21 @@
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {% if request.user.is_organizer %}
-                                    <a href="{% url 'tickets:type-list' %}" class="text-gray-500 hover:text-blue-500">Type</a>
+                                    <a href="{% url 'tickets:type-list' %}" class="text-gray-500 hover:text-blue-500 text-decoration-line: underline">Type</a>
                                 {% else %}
                                  Type
                                 {% endif %}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {% if request.user.is_organizer %}
-                                    <a href="{% url 'tickets:priority-list' %}" class="text-gray-500 hover:text-blue-500"> Priority</a>
+                                    <a href="{% url 'tickets:priority-list' %}" class="text-gray-500 hover:text-blue-500 text-decoration-line: underline"> Priority</a>
                                 {% else %}
                                  Priority
                                 {% endif %}
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {% if request.user.is_organizer %}
-                                    <a href="{% url 'tickets:status-list' %}" class="text-gray-500 hover:text-blue-500">Status</a>
+                                    <a href="{% url 'tickets:status-list' %}" class="text-gray-500 hover:text-blue-500 text-decoration-line: underline">Status</a>
                                 {% else %}
                                 Status
                                 {% endif %}

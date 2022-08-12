@@ -20,7 +20,7 @@
             File
             </label>
 
-            {% if comment.file %}Currently: <a href="/media/{{comment.file}}">ticket_{{comment.ticket.pk}}/{{comment.file}}</a>
+            {% if comment.file %}Currently: <a href="{{ comment.file.url }}">ticket_{{comment.ticket.pk}}/{{comment.file}}</a>
             <p><input type="checkbox" name="file-clear" id="file-clear_id">
             <label for="file-clear_id">Clear</label><br>{% endif %}</p>
 
