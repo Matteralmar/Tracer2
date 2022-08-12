@@ -28,7 +28,7 @@ def undo_archive(request, pk):
     if not user.is_authenticated:
         return redirect('/login/')
     if user.is_organizer:
-        project = Project.objects.get(id=pk, archive=True)
+        project = Project.objects.get(id=pk, archive=True, organisation=user.account)
         project.archive = False
         project.save()
     return redirect('/dashboard/')

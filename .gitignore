@@ -127,7 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Do not need this in github
 .idea
 media_root/
 static_root/
 staticfiles-cdn/
+conf.txt

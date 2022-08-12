@@ -24,7 +24,7 @@ class DashboardChartView(LoginRequiredMixin, generic.ListView):
             queryset = Project.objects.filter(project_manager__user=user, archive=False, organisation=user.member.organisation)
         else:
             proj = list(user.ticket_flow.all())
-            queryset = Project.objects.filter(title__in=proj, archive=False)
+            queryset = Project.objects.filter(title__in=proj, archive=False, organisation=user.member.organisation)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -242,7 +242,7 @@ class ProjectDetailView(LoginRequiredMixin, generic.DetailView):
             queryset = Project.objects.filter(project_manager__user=user, organisation=user.member.organisation, archive=False)
         else:
             proj = list(user.ticket_flow.all())
-            queryset = Project.objects.filter(title__in=proj, archive=False)
+            queryset = Project.objects.filter(title__in=proj, archive=False, organisation=user.member.organisation )
         return queryset
 
 
@@ -291,7 +291,7 @@ class AssignMemberView(ManagerAndLoginRequiredMixin, generic.FormView):
         project = get_object_or_404(Project, id=ticket.project.id, archive=False, project_manager__user=user)
         kwargs.update({
             "request": self.request,
-            "id": ticket.id,
+            "id": project.id,
         })
         return kwargs
 
@@ -547,7 +547,7 @@ class TestTicketUpdateView(TesterAndLoginRequiredMixin, generic.UpdateView):
 
     def get_queryset(self):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.member.organisation)
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         queryset = Ticket.objects.filter(tester=user.id, status_id__in=status_id, project__in=project)
         return queryset
@@ -572,7 +572,7 @@ class TicketRequestChangeView(TesterAndLoginRequiredMixin, generic.TemplateView)
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.member.organisation)
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         ticket = get_object_or_404(Ticket, tester=user.id, status_id__in=status_id, project__in=project, id=self.kwargs["pk"])
         if ticket.project.project_manager is not None:
@@ -590,7 +590,7 @@ class TestTicketDetailView(TesterAndLoginRequiredMixin, generic.DetailView):
 
     def get_queryset(self):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.member.organisation)
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         queryset = Ticket.objects.filter(tester=user.id, status_id__in=status_id, project__in=project)
         return queryset
@@ -604,9 +604,9 @@ class TestCommentCreateView(LoginRequiredMixin, generic.CreateView):
 
     def get_context_data(self, **kwargs):
         user = self.request.user
-        project = Project.objects.filter(archive=False)
+        project = Project.objects.filter(archive=False, organisation=user.member.organisation)
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
-        ticket = get_object_or_404(Ticket, tester=user.id, status_id__in=status_id, project__in=project,id=self.kwargs["pk"])
+        ticket = get_object_or_404(Ticket, tester=user.id, status_id__in=status_id, project__in=project, id=self.kwargs["pk"])
         context = super(TestCommentCreateView, self).get_context_data(**kwargs)
         context.update({
             "ticket": ticket
