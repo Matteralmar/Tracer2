@@ -523,7 +523,7 @@ class ProjectTestView(TesterAndLoginRequiredMixin, generic.ListView):
         user = self.request.user
         id = self.request.path.split('/')[4]
         self.request.session['project_id'] = id
-        proj = list(user.ticket_flow.filter(archive=False, id=id))
+        proj = list(user.ticket_flow.filter(archive=False, id=id, organisation=user.member.organisation))
         status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         queryset = Ticket.objects.filter(tester=user.id, status_id__in=status_id, project__in=proj, project__archive=False)
         return queryset
