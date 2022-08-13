@@ -1,6 +1,23 @@
-{% extends "base.html" %}
+{% load static %}
 
-{% block scripts %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!--Chart js-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" integrity="sha256-Uv9BNBucvCPipKQ2NS9wYpJmi8DTOEfTA/nH2aoJALw=" crossorigin="anonymous"></script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+
+    <title>Tracer</title>
+
+</head>
+<body class="bg-slate-100">
+    {% block scripts %}
 <script>
 $(document).ready(function(){
     const sts = document.getElementById('statusChart').getContext('2d');
@@ -172,6 +189,10 @@ $(document).ready(function(){
 
 </script>
 {% endblock scripts %}
+    <div class="max-w-7xl mx-auto">
+        {% include 'navbar.html' %}
+        {% include 'messages.html' %}
+
 {% block content %}
 <section class="text-gray-600 body-font">
   <div class="container px-5 py-24 mx-auto flex flex-wrap">
@@ -294,3 +315,7 @@ $(document).ready(function(){
     </div>
   </div>
 {% endblock content %}
+    </div>
+
+</body>
+</html>

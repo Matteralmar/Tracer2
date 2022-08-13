@@ -90,7 +90,7 @@ class TicketListView(NotManagerAndLoginRequiredMixin, generic.ListView):
         elif user.role == 'developer':
             project = Project.objects.filter(archive=False, organisation=user.member.organisation)
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
-            status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
+            status_id = Status.objects.filter(test_status=True, organisation=user.member.organisation).values_list('id', flat=True)
             queryset = queryset.filter(~Q(status_id__in=status_id), assigned_to__user=user)
         else:
             project = Project.objects.filter(archive=False, organisation=user.member.organisation)
@@ -104,11 +104,11 @@ class TicketDetailView(NotManagerAndLoginRequiredMixin, generic.DetailView):
 
     def get_queryset(self):
         user = self.request.user
-        status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         if user.is_organizer:
             project = Project.objects.filter(archive=False, organisation=user.account)
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         elif user.role == 'developer':
+            status_id = Status.objects.filter(test_status=True, organisation=user.member.organisation).values_list('id', flat=True)
             project = Project.objects.filter(archive=False, organisation=user.member.organisation)
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
             queryset = queryset.filter(~Q(status_id__in=status_id), assigned_to__user=user)
@@ -186,11 +186,11 @@ class TicketUpdateView(OrgDevAndLoginRequiredMixin, generic.UpdateView):
 
     def get_queryset(self):
         user = self.request.user
-        status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
         if user.is_organizer:
             project = Project.objects.filter(archive=False, organisation=user.account)
             queryset = Ticket.objects.filter(organisation=user.account, project__in=project)
         else:
+            status_id = Status.objects.filter(test_status=True, organisation=user.member.organisation).values_list('id', flat=True)
             project = Project.objects.filter(archive=False, organisation=user.member.organisation)
             queryset = Ticket.objects.filter(organisation=user.member.organisation, project__in=project)
             queryset = queryset.filter(~Q(status_id__in=status_id), assigned_to__user=user)
@@ -340,7 +340,7 @@ class TicketRequestChangeView(TstrDevAndLoginRequiredMixin, generic.TemplateView
         if user.role == 'tester':
             ticket = get_object_or_404(Ticket, author=user, project__in=project, pk=self.kwargs["pk"])
         else:
-            status_id = Status.objects.filter(test_status=True).values_list('id', flat=True)
+            status_id = Status.objects.filter(test_status=True, organisation=user.member.organisation).values_list('id', flat=True)
             member = Member.objects.get(user_id=user.id)
             ticket = get_object_or_404(Ticket, ~Q(status_id__in=status_id), assigned_to=member, project__in=project, pk=self.kwargs["pk"])
         if ticket.project.project_manager is not None:
