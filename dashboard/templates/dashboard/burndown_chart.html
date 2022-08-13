@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+</head>
+<body>
+
+    <script>
+
+    </script>
+</body>
+</html>
+
+
+{% load static %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <title>Tracer</title>
+
+</head>
+<body class="bg-slate-100">
+    <div class="max-w-7xl mx-auto">
+        {% include 'navbar.html' %}
+        <canvas id="myChart"></canvas>
+    </div>
+    {% block scripts %}
+        <script>
+        const data = {
+            labels: ['2022-08-13', '2022-08-14', '2022-08-15', '2022-08-16', '2022-08-17', '2022-08-18', '2022-08-19'],
+            datasets: [{
+                label: 'Actual Ticket Situation',
+                data: [8, 7, 5, 7, 6, 5, 5],
+                backgroundColor: [
+                    'rgba(144,26,255, 0.2)',
+                ],
+                borderColor: [
+                    'rgb(144,26,255)',
+                ],
+                tickets: [0, 0, -1, 2, 0, 0, 0]
+            },
+            {
+                label: 'Ideal Ticket Situation',
+                data: [8, 7, 6, 5, 4, 3, 3],
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                borderColor: 'rgba(0, 0, 0, 1)',
+                fill: true,
+                borderWidth: 0,
+                pointRadius: 0,
+                hitRadius: 0,
+            }]
+        };
+
+        // burndownChart plugin block
+        const burndownChart = {
+            id: 'burndownChart',
+            afterDatasetsDraw(chart, args, pluginOptions) {
+                const { ctx, data, chartArea: {top, bottom, left, right, width, height}, scales: {x, y}} = chart;
+                ctx.save();
+
+                const segmentWidth = width / (data.labels.length - 1) / 2;
+                const angle = Math.PI / 180;
+
+                data.datasets[0].tickets.forEach((ticket, index) => {
+                    if (ticket !== 0) {
+                        ctx.beginPath();
+                        ctx.fillStyle = 'white';
+                        ctx.arc(chart.getDatasetMeta(0).data[index].x + segmentWidth, y.getPixelForValue(1), 15, 0, angle * 360, false);
+                        ctx.fill();
+                        ctx.font = 'bold 12px sans-serif'
+                        ctx.fillStyle = 'rgba(102, 102, 102, 1)';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(ticket, chart.getDatasetMeta(0).data[index].x + segmentWidth, y.getPixelForValue(1))
+                    }
+                });
+
+            }
+        }
+
+        const config = {
+            type: 'line',
+            data,
+            options: {
+                plugins: {
+                  legend: {
+                      display: false,
+                  },
+                  tooltip: {
+                    yAlign: 'bottom',
+                      callbacks: {
+                        afterBody: (context) => {
+                            if(context[0].dataset.tickets[context[0].dataIndex] !== 0) {
+                              return '---------------------------------------'
+                            }
+
+                        },
+                        footer: (context) => {
+                          if(context[0].dataset.tickets[context[0].dataIndex] !== 0) {
+                              return `Ticket changes: ${context[0].dataset.tickets[context[0].dataIndex]}`
+
+                        }
+                      }
+                   },
+                },
+            },
+                scales: {
+                    x: {
+                      title: {
+                          display: true,
+                          text: 'Timeline'
+                        },
+                      type: 'time',
+                      time: {
+                        unit: 'day'
+                       }
+                    },
+                    y: {
+                        title: {
+                          display: true,
+                          text: 'Tickets'
+                        },
+                        beginAtZero: true,
+                        grid:{
+                            display: false,
+                            drawBorder: false
+                        }
+                    }
+                }
+            },
+            plugins: [burndownChart]
+        };
+
+        const myChart = new Chart(
+            document.getElementById('myChart'),
+            config
+        );
+        </script>
+    {% endblock scripts %}
+
+
+</body>
+</html>
